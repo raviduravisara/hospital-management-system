@@ -433,3 +433,7 @@ yarn-error.log*
 # build outputs
 dist/
 build/
+
+# Local planning/reference files (not for repo)
+*.pdf
+*.extracted.txt
