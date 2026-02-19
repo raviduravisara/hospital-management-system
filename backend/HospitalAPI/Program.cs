@@ -1,41 +1,131 @@
+using System.Security.Claims;
+using System.Text;
+using HospitalAPI.Data;
+using HospitalAPI.Models;
+using HospitalAPI.Security;
+using HospitalAPI.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Host.UseSerilog((context, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .WriteTo.Console();
+});
+
 builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+var secretKey = jwtSettings.SecretKey;
+if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < 32)
+{
+    secretKey = "super-dev-secret-key-change-this-before-production-2026";
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173", "http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+builder.Services.AddSingleton<MySqlConnectionFactory>();
+builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
+builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("FrontendPolicy");
+app.UseAuthentication();
+app.UseAuthorization();
 
-var summaries = new[]
+app.MapPost("/api/auth/register", async (RegisterRequest request, IAuthService authService, CancellationToken cancellationToken) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var result = await authService.RegisterAsync(request, cancellationToken);
+    return result.Success
+        ? Results.Created($"/api/auth/profile/{result.UserId}", result)
+        : Results.BadRequest(result);
+});
 
-app.MapGet("/weatherforecast", () =>
+app.MapPost("/api/auth/login", async (LoginRequest request, IAuthService authService, CancellationToken cancellationToken) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var result = await authService.LoginAsync(request, cancellationToken);
+    return result.Success ? Results.Ok(result) : Results.Unauthorized();
+});
+
+app.MapPost("/api/auth/refresh", async (RefreshRequest request, IAuthService authService, CancellationToken cancellationToken) =>
+{
+    var result = await authService.RefreshAsync(request, cancellationToken);
+    return result.Success ? Results.Ok(result) : Results.Unauthorized();
+});
+
+app.MapPost("/api/auth/logout", async (LogoutRequest request, ClaimsPrincipal user, IAuthService authService, CancellationToken cancellationToken) =>
+{
+    var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+    if (!int.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    await authService.LogoutAsync(userId, request, cancellationToken);
+    return Results.NoContent();
+}).RequireAuthorization();
+
+app.MapGet("/api/auth/profile", async (ClaimsPrincipal user, IAuthService authService, CancellationToken cancellationToken) =>
+{
+    var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+    if (!int.TryParse(userIdClaim, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var profile = await authService.GetProfileAsync(userId, cancellationToken);
+    return profile is null ? Results.NotFound() : Results.Ok(profile);
+}).RequireAuthorization();
+
+app.MapGet("/api/admin/ping", () => Results.Ok(new { message = "Admin access granted." }))
+    .RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/doctor/ping", () => Results.Ok(new { message = "Doctor access granted." }))
+    .RequireAuthorization(policy => policy.RequireRole("Doctor"));
+
+app.MapGet("/api/patient/ping", () => Results.Ok(new { message = "Patient access granted." }))
+    .RequireAuthorization(policy => policy.RequireRole("Patient"));
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

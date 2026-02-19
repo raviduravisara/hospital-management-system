@@ -1,6 +1,49 @@
 @HospitalAPI_HostAddress = http://localhost:5041
+@AccessToken =
+@RefreshToken =
 
-GET {{HospitalAPI_HostAddress}}/weatherforecast/
+### Register
+POST {{HospitalAPI_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "memberd_admin",
+  "email": "memberd_admin@hospital.local",
+  "password": "Pass@123",
+  "role": "Admin"
+}
+
+### Login
+POST {{HospitalAPI_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "usernameOrEmail": "memberd_admin",
+  "password": "Pass@123"
+}
+
+### Refresh
+POST {{HospitalAPI_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{RefreshToken}}"
+}
+
+### Profile
+GET {{HospitalAPI_HostAddress}}/api/auth/profile
+Authorization: Bearer {{AccessToken}}
 Accept: application/json
 
-###
+### Logout
+POST {{HospitalAPI_HostAddress}}/api/auth/logout
+Content-Type: application/json
+Authorization: Bearer {{AccessToken}}
+
+{
+  "refreshToken": "{{RefreshToken}}"
+}
+
+### Admin test route
+GET {{HospitalAPI_HostAddress}}/api/admin/ping
+Authorization: Bearer {{AccessToken}}
