@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - authentication-and-billing
   pull_request:
     branches:
       - main
