@@ -1,8 +1,19 @@
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import { extractRoleFromToken } from '../utils/auth';
 
 function Dashboard() {
     const navigate = useNavigate();
+    const token = localStorage.getItem('token');
+    const role = extractRoleFromToken(token);
+
+    if (!token) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (role === 'doctor') {
+        return <Navigate to="/doctor/dashboard" replace />;
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('token');

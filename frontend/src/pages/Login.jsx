@@ -5,6 +5,7 @@ import FormError from '../components/FormError';
 import ThemeSwitch from '../components/ThemeSwitch';
 import { mockLogin } from '../data/mockAuth';
 import { useTheme } from '../context/ThemeContext';
+import { extractRoleFromToken } from '../utils/auth';
 
 /* ─── Hero value-proposition bullet list ─────────────────────────── */
 const VALUE_PROPS = [
@@ -55,8 +56,18 @@ export default function Login() {
 
     const onSubmit = async (data) => {
         try {
-            const { token } = await mockLogin(data.email, data.password);
+            const { token, user } = await mockLogin(data.email, data.password);
             localStorage.setItem('token', token);
+
+            const roleFromUser = user?.role?.toLowerCase?.() ?? null;
+            const roleFromToken = extractRoleFromToken(token);
+            const userRole = roleFromUser || roleFromToken;
+
+            if (userRole === 'doctor') {
+                navigate('/doctor/dashboard');
+                return;
+            }
+
             navigate('/dashboard');
         } catch (err) {
             setError('root', { message: err.message ?? 'Login failed. Please try again.' });
