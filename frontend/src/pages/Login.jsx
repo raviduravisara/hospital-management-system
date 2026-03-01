@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import FormInput from '../components/FormInput';
 import FormError from '../components/FormError';
 import ThemeSwitch from '../components/ThemeSwitch';
-import { mockLogin } from '../data/mockAuth';
 import { useTheme } from '../context/ThemeContext';
+import axiosInstance from '../api/axios';
 
 /* ─── Hero value-proposition bullet list ─────────────────────────── */
 const VALUE_PROPS = [
@@ -55,11 +55,19 @@ export default function Login() {
 
     const onSubmit = async (data) => {
         try {
-            const { token } = await mockLogin(data.email, data.password);
-            localStorage.setItem('token', token);
+            const response = await axiosInstance.post('/api/auth/login', {
+                usernameOrEmail: data.usernameOrEmail,
+                password: data.password,
+            });
+
+            localStorage.setItem('token', response.data.accessToken);
+            if (response.data.refreshToken) {
+                localStorage.setItem('refreshToken', response.data.refreshToken);
+            }
             navigate('/dashboard');
         } catch (err) {
-            setError('root', { message: err.message ?? 'Login failed. Please try again.' });
+            const message = err.response?.data?.message ?? err.message ?? 'Login failed. Please try again.';
+            setError('root', { message });
         }
     };
 
@@ -192,17 +200,13 @@ export default function Login() {
                         className="flex flex-col gap-5"
                     >
                         <FormInput
-                            id="email"
-                            label="Email Address"
-                            type="email"
-                            placeholder="doctor@hospital.com"
-                            error={errors.email}
-                            registration={register('email', {
-                                required: 'Email address is required',
-                                pattern: {
-                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                    message: 'Please enter a valid email address',
-                                },
+                            id="usernameOrEmail"
+                            label="Username or Email"
+                            type="text"
+                            placeholder="admin2 or admin2@hospital.local"
+                            error={errors.usernameOrEmail}
+                            registration={register('usernameOrEmail', {
+                                required: 'Username or email is required',
                             })}
                         />
 
