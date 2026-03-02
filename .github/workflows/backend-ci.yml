@@ -29,3 +29,5 @@ jobs:
 
       - name: Test
         run: dotnet test backend/HospitalAPI/HospitalAPI.csproj --configuration Release --no-build
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal
