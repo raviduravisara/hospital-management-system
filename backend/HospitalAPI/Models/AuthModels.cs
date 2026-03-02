@@ -13,7 +13,7 @@ public sealed class JwtSettings
 
 public sealed record RegisterRequest(string Username, string Email, string Password, string? Role);
 
-public sealed record LoginRequest(string UsernameOrEmail, string Password);
+public sealed record LoginRequest(string UsernameOrEmail, string Password)
 
 public sealed record RefreshRequest(string RefreshToken);
 
