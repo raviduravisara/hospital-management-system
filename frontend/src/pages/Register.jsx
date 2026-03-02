@@ -43,10 +43,9 @@ const BENEFITS = [
 /* ─── Role options ────────────────────────────────────────────────── */
 const ROLE_OPTIONS = [
     { value: '', label: '— Select Role —' },
-    { value: 'admin', label: 'Admin' },
-    { value: 'doctor', label: 'Doctor' },
-    { value: 'nurse', label: 'Nurse' },
-    { value: 'receptionist', label: 'Receptionist' },
+    { value: 'Admin', label: 'Admin' },
+    { value: 'Doctor', label: 'Doctor' },
+    { value: 'Patient', label: 'Patient' },
 ];
 
 /* ─── Register Page ───────────────────────────────────────────────── */
@@ -207,29 +206,16 @@ export default function Register() {
                         noValidate
                         className="flex flex-col gap-4"
                     >
-                        {/* First Name + Last Name — 2-col grid on sm+ */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormInput
-                                id="firstName"
-                                label="First Name"
-                                type="text"
-                                placeholder="John"
-                                error={errors.firstName}
-                                registration={register('firstName', {
-                                    required: 'First name is required',
-                                })}
-                            />
-                            <FormInput
-                                id="lastName"
-                                label="Last Name"
-                                type="text"
-                                placeholder="Doe"
-                                error={errors.lastName}
-                                registration={register('lastName', {
-                                    required: 'Last name is required',
-                                })}
-                            />
-                        </div>
+                        <FormInput
+                            id="username"
+                            label="Username"
+                            type="text"
+                            placeholder="admin2"
+                            error={errors.username}
+                            registration={register('username', {
+                                required: 'Username is required',
+                            })}
+                        />
 
                         <FormInput
                             id="email"
