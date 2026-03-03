@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import './DoctorDashboard.css';
 import { extractRoleFromToken } from '../utils/auth';
 
-const ALLOWED_ROLES = ['doctor', 'admin'];
+const ALLOWED_ROLES = ['doctor'];
 
 const APPOINTMENTS = [
   { id: 1, patient: 'Nimal Perera', time: '09:00 AM', reason: 'Follow-up consultation' },

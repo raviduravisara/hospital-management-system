@@ -14,6 +14,12 @@ function Dashboard() {
     if (role === 'doctor') {
         return <Navigate to="/doctor/dashboard" replace />;
     }
+    if (role === 'patient') {
+        return <Navigate to="/patient/dashboard" replace />;
+    }
+    if (role !== 'admin') {
+        return <Navigate to="/login" replace />;
+    }
 
     const handleLogout = () => {
         localStorage.removeItem('token');

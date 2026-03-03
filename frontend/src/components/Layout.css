@@ -39,8 +39,12 @@ body {
   text-decoration: none;
 }
 
-.brand-icon {
-  font-size: 1.5rem;
+.brand-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .brand-name {
@@ -65,6 +69,13 @@ body {
   font-size: 0.95rem;
   font-weight: 500;
   transition: background 0.2s, color 0.2s;
+}
+
+.nav-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .nav-link:hover {

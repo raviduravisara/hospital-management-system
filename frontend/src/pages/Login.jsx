@@ -5,6 +5,7 @@ import FormError from '../components/FormError';
 import ThemeSwitch from '../components/ThemeSwitch';
 import { useTheme } from '../context/ThemeContext';
 import axiosInstance from '../api/axios';
+import { extractRoleFromToken } from '../utils/auth';
 
 /* ─── Hero value-proposition bullet list ─────────────────────────── */
 const VALUE_PROPS = [
@@ -64,7 +65,16 @@ export default function Login() {
             if (response.data.refreshToken) {
                 localStorage.setItem('refreshToken', response.data.refreshToken);
             }
-            navigate('/dashboard');
+            const role = extractRoleFromToken(response.data.accessToken);
+            const targetRoute =
+                role === 'admin'
+                    ? '/admin/dashboard'
+                    : role === 'doctor'
+                        ? '/doctor/dashboard'
+                        : role === 'patient'
+                            ? '/patient/dashboard'
+                            : '/dashboard';
+            navigate(targetRoute);
         } catch (err) {
             const message = err.response?.data?.message ?? err.message ?? 'Login failed. Please try again.';
             setError('root', { message });
@@ -113,10 +123,8 @@ export default function Login() {
                 <div className="hidden lg:flex flex-col gap-8">
                     {/* Logo / wordmark */}
                     <div className="flex items-center gap-3 drop-shadow-md">
-                        <span className="text-3xl" aria-hidden="true">🏥</span>
-                        <span className={`text-lg font-semibold tracking-wide ${heroColor}`}>
-                            HMS Portal
-                        </span>
+                        <img src="/hospital-bg.png" alt="HMS" className="h-9 w-9 rounded-md object-cover border border-white/30" />
+                        <span className={`text-lg font-semibold tracking-wide ${heroColor}`}>HMS Portal</span>
                     </div>
 
                     {/* Hero headline */}
@@ -181,7 +189,7 @@ export default function Login() {
                     <div className="flex flex-col gap-1">
                         {/* Mobile logo (shown only on < lg) */}
                         <div className={`flex items-center gap-2 mb-2 lg:hidden ${labelColor}`}>
-                            <span className="text-2xl" aria-hidden="true">🏥</span>
+                            <img src="/hospital-bg.png" alt="HMS" className="h-8 w-8 rounded-md object-cover border border-white/30" />
                             <span className="text-base font-semibold tracking-wide">HMS Portal</span>
                         </div>
                         <h2 className={`text-2xl font-bold ${labelColor}`}>Welcome back</h2>
@@ -203,7 +211,7 @@ export default function Login() {
                             id="usernameOrEmail"
                             label="Username or Email"
                             type="text"
-                            placeholder="admin2 or admin2@hospital.local"
+                            placeholder="Admin or admin@hospital.local"
                             error={errors.usernameOrEmail}
                             registration={register('usernameOrEmail', {
                                 required: 'Username or email is required',
