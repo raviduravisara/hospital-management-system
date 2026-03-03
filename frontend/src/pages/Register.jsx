@@ -43,7 +43,6 @@ const BENEFITS = [
 /* ─── Role options ────────────────────────────────────────────────── */
 const ROLE_OPTIONS = [
     { value: '', label: '— Select Role —' },
-    { value: 'Admin', label: 'Admin' },
     { value: 'Doctor', label: 'Doctor' },
     { value: 'Patient', label: 'Patient' },
 ];
@@ -117,7 +116,7 @@ export default function Register() {
                 <div className="hidden lg:flex flex-col gap-8">
                     {/* Logo */}
                     <div className="flex items-center gap-3 drop-shadow-md">
-                        <span className="text-3xl" aria-hidden="true">🏥</span>
+                        <img src="/hospital-bg.png" alt="HMS" className="h-9 w-9 rounded-md object-cover border border-white/30" />
                         <span className={`text-lg font-semibold tracking-wide ${heroColor}`}>
                             HMS Portal
                         </span>
@@ -188,7 +187,7 @@ export default function Register() {
                     <div className="flex flex-col gap-1">
                         {/* Mobile-only logo */}
                         <div className={`flex items-center gap-2 mb-2 lg:hidden ${labelColor}`}>
-                            <span className="text-2xl" aria-hidden="true">🏥</span>
+                            <img src="/hospital-bg.png" alt="HMS" className="h-8 w-8 rounded-md object-cover border border-white/30" />
                             <span className="text-base font-semibold tracking-wide">HMS Portal</span>
                         </div>
                         <h2 className={`text-2xl font-bold ${labelColor}`}>Create Account</h2>
@@ -366,3 +365,4 @@ export default function Register() {
         </div>
     );
 }
+
