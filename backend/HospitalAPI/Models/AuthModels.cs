@@ -11,6 +11,16 @@ public sealed class JwtSettings
     public int RefreshTokenDays { get; init; } = 7;
 }
 
+public sealed class AdminAccountSettings
+{
+    public const string SectionName = "AdminAccount";
+
+    public bool Enabled { get; init; } = true;
+    public string Username { get; init; } = "admin1";
+    public string Email { get; init; } = "admin@hospital.local";
+    public string Password { get; init; } = "Admin@123";
+}
+
 public sealed record RegisterRequest(string Username, string Email, string Password, string? Role);
 
 public sealed record LoginRequest(string UsernameOrEmail, string Password);
