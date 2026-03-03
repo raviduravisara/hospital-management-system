@@ -54,6 +54,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.Configure<AdminAccountSettings>(builder.Configuration.GetSection(AdminAccountSettings.SectionName));
 
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
 var secretKey = jwtSettings.SecretKey;
@@ -101,6 +102,8 @@ builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
+
+await EnsureFixedAdminAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
 {
@@ -170,3 +173,116 @@ app.MapGet("/api/patient/ping", () => Results.Ok(new { message = "Patient access
     .RequireAuthorization(policy => policy.RequireRole("Patient"));
 
 app.Run();
+
+static async Task EnsureFixedAdminAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var adminSettings = scope.ServiceProvider
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<AdminAccountSettings>>()
+        .Value;
+
+    if (!adminSettings.Enabled ||
+        string.IsNullOrWhiteSpace(adminSettings.Username) ||
+        string.IsNullOrWhiteSpace(adminSettings.Email) ||
+        string.IsNullOrWhiteSpace(adminSettings.Password))
+    {
+        return;
+    }
+
+    var connectionFactory = scope.ServiceProvider.GetRequiredService<MySqlConnectionFactory>();
+    await using var connection = connectionFactory.CreateConnection();
+    await connection.OpenAsync();
+
+    var fixedUsername = adminSettings.Username.Trim();
+    var fixedEmail = adminSettings.Email.Trim();
+    int? usernameUserId = null;
+    int? emailUserId = null;
+
+    await using (var check = connection.CreateCommand())
+    {
+        check.CommandText = """
+            SELECT user_id, username, email
+            FROM Users
+            WHERE username = @username OR email = @email
+            """;
+        check.Parameters.AddWithValue("@username", fixedUsername);
+        check.Parameters.AddWithValue("@email", fixedEmail);
+
+        await using var reader = await check.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var userId = reader.GetInt32(reader.GetOrdinal("user_id"));
+            var username = reader.GetString(reader.GetOrdinal("username"));
+            var email = reader.GetString(reader.GetOrdinal("email"));
+
+            if (string.Equals(username, fixedUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                usernameUserId = userId;
+            }
+
+            if (string.Equals(email, fixedEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                emailUserId = userId;
+            }
+        }
+    }
+
+    var passwordHash = BCrypt.Net.BCrypt.HashPassword(adminSettings.Password);
+
+    if (usernameUserId is null && emailUserId is null)
+    {
+        await using var insert = connection.CreateCommand();
+        insert.CommandText = """
+            INSERT INTO Users (username, email, password_hash, role, is_active)
+            VALUES (@username, @email, @passwordHash, 'Admin', 1);
+            """;
+        insert.Parameters.AddWithValue("@username", fixedUsername);
+        insert.Parameters.AddWithValue("@email", fixedEmail);
+        insert.Parameters.AddWithValue("@passwordHash", passwordHash);
+        await insert.ExecuteNonQueryAsync();
+        return;
+    }
+
+    var targetUserId = usernameUserId ?? emailUserId!.Value;
+    var duplicateUserId = (usernameUserId.HasValue && emailUserId.HasValue && usernameUserId.Value != emailUserId.Value)
+        ? emailUserId
+        : null;
+
+    await using var transaction = await connection.BeginTransactionAsync();
+
+    if (duplicateUserId.HasValue)
+    {
+        await using var deactivateDuplicate = connection.CreateCommand();
+        deactivateDuplicate.Transaction = (MySql.Data.MySqlClient.MySqlTransaction)transaction;
+        deactivateDuplicate.CommandText = """
+            UPDATE Users
+            SET username = CONCAT('archived_admin_', user_id),
+                email = CONCAT('archived_admin_', user_id, '@local.invalid'),
+                is_active = 0
+            WHERE user_id = @duplicateUserId;
+            """;
+        deactivateDuplicate.Parameters.AddWithValue("@duplicateUserId", duplicateUserId.Value);
+        await deactivateDuplicate.ExecuteNonQueryAsync();
+    }
+
+    await using (var update = connection.CreateCommand())
+    {
+        update.Transaction = (MySql.Data.MySqlClient.MySqlTransaction)transaction;
+        update.CommandText = """
+            UPDATE Users
+            SET username = @username,
+                email = @email,
+                password_hash = @passwordHash,
+                role = 'Admin',
+                is_active = 1
+            WHERE user_id = @userId;
+            """;
+        update.Parameters.AddWithValue("@username", fixedUsername);
+        update.Parameters.AddWithValue("@email", fixedEmail);
+        update.Parameters.AddWithValue("@passwordHash", passwordHash);
+        update.Parameters.AddWithValue("@userId", targetUserId);
+        await update.ExecuteNonQueryAsync();
+    }
+
+    await transaction.CommitAsync();
+}

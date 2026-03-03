@@ -26,7 +26,12 @@ public sealed class AuthService(
         var role = NormalizeRole(request.Role);
         if (role is null)
         {
-            return new RegisterResult(false, "Invalid role. Allowed roles: Patient, Doctor, Admin.", null);
+            return new RegisterResult(false, "Invalid role. Allowed roles: Patient, Doctor.", null);
+        }
+
+        if (role == "Admin")
+        {
+            return new RegisterResult(false, "Admin self-registration is disabled.", null);
         }
 
         await using var connection = connectionFactory.CreateConnection();
