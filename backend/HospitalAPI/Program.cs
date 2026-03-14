@@ -110,6 +110,7 @@ builder.Services.AddSingleton<MySqlConnectionFactory>();
 builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
 
 var app = builder.Build();
 
@@ -184,7 +185,151 @@ app.MapGet("/api/doctor/ping", () => Results.Ok(new { message = "Doctor access g
 app.MapGet("/api/patient/ping", () => Results.Ok(new { message = "Patient access granted." }))
     .RequireAuthorization(policy => policy.RequireRole("Patient"));
 
+app.MapPost("/api/patients", async (
+    PatientUpsertRequest request,
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var role = GetCurrentRole(user);
+    var currentUserId = GetCurrentUserId(user);
+
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var targetUserId = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+        ? request.UserId ?? currentUserId.Value
+        : currentUserId.Value;
+
+    var result = await patientService.CreateAsync(request, targetUserId, cancellationToken);
+    return result.Success
+        ? Results.Created($"/api/patients/{result.Patient!.PatientId}", result.Patient)
+        : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Patient", "Admin"));
+
+app.MapGet("/api/patients/{patientId:int}", async (
+    int patientId,
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var profile = await patientService.GetByIdAsync(patientId, cancellationToken);
+    if (profile is null)
+    {
+        return Results.NotFound();
+    }
+
+    var role = GetCurrentRole(user);
+    var currentUserId = GetCurrentUserId(user);
+
+    var isAllowed = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase)
+                    || (string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase)
+                        && currentUserId == profile.UserId);
+
+    return isAllowed ? Results.Ok(profile) : Results.Forbid();
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor", "Patient"));
+
+app.MapGet("/api/patients/me", async (
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var profile = await patientService.GetByUserIdAsync(currentUserId.Value, cancellationToken);
+    return profile is null ? Results.NotFound() : Results.Ok(profile);
+}).RequireAuthorization(policy => policy.RequireRole("Patient"));
+
+app.MapPut("/api/patients/{patientId:int}", async (
+    int patientId,
+    PatientUpsertRequest request,
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var profile = await patientService.GetByIdAsync(patientId, cancellationToken);
+    if (profile is null)
+    {
+        return Results.NotFound();
+    }
+
+    var role = GetCurrentRole(user);
+    var currentUserId = GetCurrentUserId(user);
+    var isAllowed = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase)
+                    || (string.Equals(role, "Patient", StringComparison.OrdinalIgnoreCase)
+                        && currentUserId == profile.UserId);
+
+    if (!isAllowed)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await patientService.UpdateByIdAsync(patientId, request, cancellationToken);
+    return result.Success ? Results.Ok(result.Patient) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor", "Patient"));
+
+app.MapPut("/api/patients/me", async (
+    PatientUpsertRequest request,
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var result = await patientService.UpdateByUserIdAsync(currentUserId.Value, request, cancellationToken);
+    return result.Success ? Results.Ok(result.Patient) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Patient"));
+
+app.MapDelete("/api/patients/{patientId:int}", async (
+    int patientId,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var deleted = await patientService.DeleteAsync(patientId, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/patients/me/summary", async (
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var summary = await patientService.GetDashboardSummaryByUserIdAsync(currentUserId.Value, cancellationToken);
+    return summary is null ? Results.NotFound() : Results.Ok(summary);
+}).RequireAuthorization(policy => policy.RequireRole("Patient"));
+
 app.Run();
+
+static int? GetCurrentUserId(ClaimsPrincipal user)
+{
+    var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
+    return int.TryParse(userIdClaim, out var userId) ? userId : null;
+}
+
+static string? GetCurrentRole(ClaimsPrincipal user)
+{
+    return user.FindFirstValue(ClaimTypes.Role)
+           ?? user.FindFirstValue("role")
+           ?? user.Claims.FirstOrDefault(c => c.Type.EndsWith("/role", StringComparison.OrdinalIgnoreCase))?.Value;
+}
 
 static async Task EnsureFixedAdminAsync(IServiceProvider services)
 {

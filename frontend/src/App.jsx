@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
+import PatientRegistration from './pages/PatientRegistration';
+import PatientProfile from './pages/PatientProfile';
 // TODO: Uncomment these imports once the page components are added to src/pages/
 // import Prescriptions from './pages/Prescriptions';
 // import Medicines from './pages/Medicines';
@@ -24,6 +26,8 @@ function App() {
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route path="doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="patient/dashboard" element={<PatientDashboard />} />
+          <Route path="patient/register" element={<PatientRegistration />} />
+          <Route path="patient/profile" element={<PatientProfile />} />
           {/* Feature routes - uncomment after adding the page components */}
           {/* <Route path="prescriptions" element={<Prescriptions />} /> */}
           {/* <Route path="medicines" element={<Medicines />} /> */}
