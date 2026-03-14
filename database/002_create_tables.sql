@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS Prescription_Items;
 DROP TABLE IF EXISTS Medicines;
 DROP TABLE IF EXISTS Prescriptions;
 DROP TABLE IF EXISTS Appointments;
+DROP TABLE IF EXISTS DoctorSchedule;
 DROP TABLE IF EXISTS Doctors;
 DROP TABLE IF EXISTS Patients;
 DROP TABLE IF EXISTS Users;
@@ -58,6 +59,28 @@ CREATE TABLE Doctors (
     CONSTRAINT fk_doctors_user
         FOREIGN KEY (user_id) REFERENCES Users(user_id)
         ON DELETE SET NULL
+);
+
+CREATE TABLE DoctorSchedule (
+    doctor_schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+    doctor_id INT NOT NULL,
+    day_of_week ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday') NOT NULL,
+    start_time TIME,
+    end_time TIME,
+    is_available BOOLEAN NOT NULL DEFAULT TRUE,
+    slot_duration_minutes INT NOT NULL DEFAULT 30,
+    notes VARCHAR(255),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_doctor_schedule_doctor
+        FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_doctor_schedule_slot_duration
+        CHECK (slot_duration_minutes BETWEEN 5 AND 240),
+    CONSTRAINT chk_doctor_schedule_times
+        CHECK ((is_available = 0) OR (start_time IS NOT NULL AND end_time IS NOT NULL AND end_time > start_time)),
+    CONSTRAINT uq_doctor_schedule_slot
+        UNIQUE (doctor_id, day_of_week, start_time, end_time)
 );
 
 CREATE TABLE Appointments (
