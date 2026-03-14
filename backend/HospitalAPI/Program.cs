@@ -115,6 +115,7 @@ builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 builder.Services.AddScoped<IMedicineService, MedicineService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
 var app = builder.Build();
 
@@ -648,6 +649,80 @@ app.MapDelete("/api/invoices/{invoiceId:int}", async (
     CancellationToken cancellationToken) =>
 {
     var deleted = await invoiceService.DeleteAsync(invoiceId, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPost("/api/users", async (
+    AdminUserCreateRequest request,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await userManagementService.CreateAsync(request, cancellationToken);
+    return result.Success
+        ? Results.Created($"/api/users/{result.User!.UserId}", result.User)
+        : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/users", async (
+    string? role,
+    bool? isActive,
+    string? search,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken) =>
+{
+    var users = await userManagementService.GetAllAsync(role, isActive, search, cancellationToken);
+    return Results.Ok(users);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/users/{userId:int}", async (
+    int userId,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken) =>
+{
+    var user = await userManagementService.GetByIdAsync(userId, cancellationToken);
+    return user is null ? Results.NotFound() : Results.Ok(user);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPut("/api/users/{userId:int}", async (
+    int userId,
+    AdminUserUpdateRequest request,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await userManagementService.UpdateAsync(userId, request, cancellationToken);
+    return result.Success ? Results.Ok(result.User) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPut("/api/users/{userId:int}/status", async (
+    int userId,
+    AdminUserStatusUpdateRequest request,
+    ClaimsPrincipal principal,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(principal);
+    if (currentUserId == userId && !request.IsActive)
+    {
+        return Results.BadRequest(new { message = "You cannot deactivate your own account." });
+    }
+
+    var result = await userManagementService.UpdateStatusAsync(userId, request.IsActive, cancellationToken);
+    return result.Success ? Results.Ok(result.User) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapDelete("/api/users/{userId:int}", async (
+    int userId,
+    ClaimsPrincipal principal,
+    IUserManagementService userManagementService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(principal);
+    if (currentUserId == userId)
+    {
+        return Results.BadRequest(new { message = "You cannot delete your own account." });
+    }
+
+    var deleted = await userManagementService.DeleteAsync(userId, cancellationToken);
     return deleted ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
