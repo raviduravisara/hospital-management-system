@@ -191,6 +191,11 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (id === 'users') {
+      navigate('/admin/users');
+      return;
+    }
+
     if (id === 'inventory') {
       navigate('/admin/inventory');
       return;
@@ -513,6 +518,11 @@ export default function AdminDashboard() {
                   const c = COLOR_MAP[color];
 
                   const handleActionClick = () => {
+                    if (label === 'Add New User') {
+                      navigate('/admin/users');
+                      return;
+                    }
+
                     if (label === 'Create Invoice') {
                       navigate('/admin/invoices');
                       return;

@@ -13,6 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Medicines from './pages/Medicines';
 import InventoryManagement from './pages/InventoryManagement';
 import Invoices from './pages/Invoices';
+import Users from './pages/Users';
 import PatientDashboard from './pages/PatientDashboard';
 import PatientRegistration from './pages/PatientRegistration';
 import PatientProfile from './pages/PatientProfile';
@@ -34,6 +35,7 @@ function App() {
           <Route path="admin/medicines" element={<Medicines />} />
           <Route path="admin/inventory" element={<InventoryManagement />} />
           <Route path="admin/invoices" element={<Invoices />} />
+          <Route path="admin/users" element={<Users />} />
           <Route path="doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="doctor/register" element={<DoctorRegistration />} />
           <Route path="doctor/profile" element={<DoctorProfile />} />
