@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
+import DoctorRegistration from './pages/DoctorRegistration';
+import DoctorProfile from './pages/DoctorProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import PatientRegistration from './pages/PatientRegistration';
@@ -25,6 +27,8 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route path="doctor/dashboard" element={<DoctorDashboard />} />
+          <Route path="doctor/register" element={<DoctorRegistration />} />
+          <Route path="doctor/profile" element={<DoctorProfile />} />
           <Route path="patient/dashboard" element={<PatientDashboard />} />
           <Route path="patient/register" element={<PatientRegistration />} />
           <Route path="patient/profile" element={<PatientProfile />} />
