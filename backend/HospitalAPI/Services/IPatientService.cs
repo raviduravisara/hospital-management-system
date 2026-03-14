@@ -17,4 +17,6 @@ public interface IPatientService
     Task<bool> DeleteAsync(int patientId, CancellationToken cancellationToken);
 
     Task<PatientDashboardSummaryResponse?> GetDashboardSummaryByUserIdAsync(int userId, CancellationToken cancellationToken);
+
+    Task<PatientDashboardDetailsResponse?> GetDashboardDetailsByUserIdAsync(int userId, CancellationToken cancellationToken);
 }
