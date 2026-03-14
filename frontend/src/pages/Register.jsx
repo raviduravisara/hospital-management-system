@@ -3,56 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import FormInput from '../components/FormInput';
 import FormError from '../components/FormError';
 import ThemeSwitch from '../components/ThemeSwitch';
-import { useTheme } from '../context/ThemeContext';
 import axiosInstance from '../api/axios';
 
-/* ─── Left-column marketing bullets ──────────────────────────────── */
-const BENEFITS = [
-    {
-        icon: (
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-        ),
-        text: 'Manage patient records from anywhere',
-    },
-    {
-        icon: (
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-        ),
-        text: 'Schedule and track appointments with ease',
-    },
-    {
-        icon: (
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5M12 12a4 4 0 100-8 4 4 0 000 8z"
-            />
-        ),
-        text: 'Collaborate across all staff roles securely',
-    },
-];
 
-/* ─── Role options ────────────────────────────────────────────────── */
+/* Role options */
 const ROLE_OPTIONS = [
-    { value: '', label: '— Select Role —' },
+    { value: '', label: '-- Select Role --' },
     { value: 'Doctor', label: 'Doctor' },
     { value: 'Patient', label: 'Patient' },
 ];
 
-/* ─── Register Page ───────────────────────────────────────────────── */
+/* Register Page */
 export default function Register() {
     const navigate = useNavigate();
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
-
     const {
         register,
         handleSubmit,
@@ -75,294 +38,153 @@ export default function Register() {
         }
     };
 
-    /* ── Theme-aware surface tokens (mirrors Login.jsx) ──────────── */
-    const glassBg = isDark ? 'bg-[rgba(255,255,255,0.15)]' : 'bg-[rgba(0,0,0,0.18)]';
-    const glassBorder = isDark ? 'border-[rgba(255,255,255,0.25)]' : 'border-[rgba(0,0,0,0.25)]';
-    const labelColor = isDark ? 'text-white' : 'text-gray-900';
-    const heroColor = isDark ? 'text-white' : 'text-gray-900';
-    const dividerColor = isDark
-        ? 'border-[rgba(255,255,255,0.4)]'
-        : 'border-[rgba(0,0,0,0.25)]';
-    const dividerText = isDark ? 'text-white/70' : 'text-gray-900/70';
-
     return (
-        /*
-         * Full-bleed wrapper — same background image as Login to preserve
-         * visual continuity across the auth flow.
-         */
         <div
-            className="relative min-h-screen w-full flex items-center justify-center overflow-hidden"
+            className="relative min-h-screen w-full flex flex-col overflow-hidden"
             style={{
-                backgroundImage:
-                    "url('/hospital-bg.png')",
+                backgroundImage: "url('/1.png')",
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
             }}
         >
-            {/* Scrim overlay */}
-            {/* Scrim: strong enough to make text readable over ANY background brightness */}
-            <div className="absolute inset-0 bg-black/50 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-950/85 via-blue-900/80 to-blue-800/75 pointer-events-none" />
+            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
 
-            {/* Theme toggle */}
-            <div className="absolute top-4 right-4 z-20">
+            {/* Top bar */}
+            <div className="relative z-20 w-full flex items-center justify-between px-6 py-4">
+                <Link to="/" className="flex items-center gap-2.5">
+                    <img src="/logo.png" alt="HEALIX" className="h-9 w-9 object-contain" />
+                    <span className="text-white font-extrabold text-lg tracking-tight">HEALIX</span>
+                </Link>
                 <ThemeSwitch />
             </div>
 
-            {/* ── Two-column grid (lg+) / single-column (< lg) ───────── */}
-            <div className="relative z-10 w-full max-w-6xl mx-auto px-6 py-10 lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
+            {/* Centered card */}
+            <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-8">
+                <div className="w-full max-w-md">
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                        {/* Blue header band */}
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 text-center">
+                            <div className="flex items-center justify-center gap-2.5 mb-3">
+                                <img src="/logo.png" alt="HEALIX" className="h-10 w-10 object-contain drop-shadow-md" />
+                                <span className="text-white font-extrabold text-xl tracking-tight">HEALIX</span>
+                            </div>
+                            <h1 className="text-white text-2xl font-bold">Create Account</h1>
+                            <p className="text-blue-100 text-sm mt-1">Join the HEALIX healthcare platform</p>
+                        </div>
 
-                {/* ── LEFT: Hero Branding (hidden on < lg) ─────────────── */}
-                <div className="hidden lg:flex flex-col gap-8">
-                    {/* Logo */}
-                    <div className="flex items-center gap-3 drop-shadow-md">
-                        <img src="/hospital-bg.png" alt="HMS" className="h-9 w-9 rounded-md object-cover border border-white/30" />
-                        <span className={`text-lg font-semibold tracking-wide ${heroColor}`}>
-                            HMS Portal
-                        </span>
-                    </div>
+                        {/* Form body */}
+                        <div className="px-8 py-6 flex flex-col gap-4">
+                            <FormError message={errors.root?.message} />
 
-                    {/* Headline */}
-                    <div className="drop-shadow-lg">
-                        <h1
-                            className={`font-extrabold uppercase leading-tight text-5xl lg:text-7xl ${heroColor}`}
-                            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
-                        >
-                            Join Our{' '}
-                            <span className="text-primary-500">
-                                Healthcare
-                            </span>{' '}
-                            Network.
-                        </h1>
-                        <p className={`mt-4 text-xl font-semibold leading-relaxed drop-shadow-md ${heroColor}`}>
-                            Register to manage appointments, medical records, and more.
-                        </p>
-                    </div>
+                            <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+                                <FormInput
+                                    id="username"
+                                    label="Username"
+                                    type="text"
+                                    placeholder="e.g. jsmith"
+                                    error={errors.username}
+                                    registration={register('username', { required: 'Username is required' })}
+                                />
 
-                    {/* Benefit bullets */}
-                    <ul className="flex flex-col gap-4">
-                        {BENEFITS.map(({ icon, text }) => (
-                            <li key={text} className="flex items-center gap-3">
-                                <span
-                                    className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-primary-500/30 ${heroColor}`}
+                                <FormInput
+                                    id="email"
+                                    label="Email Address"
+                                    type="email"
+                                    placeholder="doctor@hospital.com"
+                                    error={errors.email}
+                                    registration={register('email', {
+                                        required: 'Email address is required',
+                                        pattern: {
+                                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                            message: 'Please enter a valid email address',
+                                        },
+                                    })}
+                                />
+
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="role" className="text-sm font-medium text-gray-700">Role</label>
+                                    <select
+                                        id="role"
+                                        className={`w-full px-4 py-2.5 bg-gray-100 text-gray-900 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:border-transparent appearance-none cursor-pointer ${
+                                            errors.role ? 'border-red-400 focus:ring-red-400' : 'border-transparent focus:ring-blue-500'
+                                        }`}
+                                        {...register('role', { required: 'Please select a role' })}
+                                    >
+                                        {ROLE_OPTIONS.map(({ value, label }) => (
+                                            <option key={value} value={value} disabled={value === ''}>{label}</option>
+                                        ))}
+                                    </select>
+                                    {errors.role && (
+                                        <span role="alert" className="text-xs text-red-500 font-medium mt-0.5">{errors.role.message}</span>
+                                    )}
+                                </div>
+
+                                <FormInput
+                                    id="password"
+                                    label="Password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={errors.password}
+                                    registration={register('password', {
+                                        required: 'Password is required',
+                                        minLength: { value: 6, message: 'Password must be at least 6 characters' },
+                                    })}
+                                />
+
+                                <FormInput
+                                    id="confirmPassword"
+                                    label="Confirm Password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={errors.confirmPassword}
+                                    registration={register('confirmPassword', {
+                                        required: 'Please confirm your password',
+                                        validate: (val) => val === password || 'Passwords do not match',
+                                    })}
+                                />
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="w-full py-3 px-4 mt-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                        aria-hidden="true"
-                                    >
-                                        {icon}
-                                    </svg>
-                                </span>
-                                <span className={`text-sm font-semibold drop-shadow-sm ${heroColor}`}>{text}</span>
-                            </li>
-                        ))}
-                    </ul>
+                                    {isSubmitting ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <svg className="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                                            </svg>
+                                            Creating account…
+                                        </span>
+                                    ) : 'Create Account'}
+                                </button>
+                            </form>
 
-                    <p className={`text-sm font-medium drop-shadow-sm ${heroColor}`}>
-                        Trusted by over 200 hospitals worldwide.
-                    </p>
-                </div>
+                            <div className="flex items-center gap-3">
+                                <hr className="flex-1 border-gray-200" />
+                                <span className="text-xs text-gray-400 font-medium">OR</span>
+                                <hr className="flex-1 border-gray-200" />
+                            </div>
 
-                {/* ── RIGHT: Glassmorphism Registration Card ────────────── */}
-                <div
-                    className={[
-                        glassBg,
-                        glassBorder,
-                        'backdrop-blur-glass',
-                        'border',
-                        'rounded-card',
-                        'shadow-glass',
-                        'p-8 sm:p-10',
-                        'w-full',
-                        'flex flex-col gap-5',
-                    ].join(' ')}
-                    aria-label="Registration form"
-                >
-                    {/* Card header */}
-                    <div className="flex flex-col gap-1">
-                        {/* Mobile-only logo */}
-                        <div className={`flex items-center gap-2 mb-2 lg:hidden ${labelColor}`}>
-                            <img src="/hospital-bg.png" alt="HMS" className="h-8 w-8 rounded-md object-cover border border-white/30" />
-                            <span className="text-base font-semibold tracking-wide">HMS Portal</span>
+                            <p className="text-sm text-center text-gray-600">
+                                Already have an account?{' '}
+                                <Link to="/login" className="text-blue-600 font-semibold hover:text-blue-700 hover:underline">Sign in here</Link>
+                            </p>
                         </div>
-                        <h2 className={`text-2xl font-bold ${labelColor}`}>Create Account</h2>
-                        <p className={`text-sm opacity-95 ${labelColor}`}>
-                            Register as a new HMS user to get started
-                        </p>
                     </div>
 
-                    {/* Root error banner */}
-                    <FormError message={errors.root?.message} />
-
-                    {/* Registration form */}
-                    <form
-                        onSubmit={handleSubmit(onSubmit)}
-                        noValidate
-                        className="flex flex-col gap-4"
-                    >
-                        <FormInput
-                            id="username"
-                            label="Username"
-                            type="text"
-                            placeholder="admin2"
-                            error={errors.username}
-                            registration={register('username', {
-                                required: 'Username is required',
-                            })}
-                        />
-
-                        <FormInput
-                            id="email"
-                            label="Email Address"
-                            type="email"
-                            placeholder="doctor@hospital.com"
-                            error={errors.email}
-                            registration={register('email', {
-                                required: 'Email address is required',
-                                pattern: {
-                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                    message: 'Please enter a valid email address',
-                                },
-                            })}
-                        />
-
-                        {/* Role dropdown */}
-                        <div className="flex flex-col gap-1.5">
-                            <label
-                                htmlFor="role"
-                                className={`text-sm font-medium ${labelColor}`}
-                            >
-                                Role
-                            </label>
-                            <select
-                                id="role"
-                                className={[
-                                    'w-full px-4 py-2.5',
-                                    'bg-gray-100 text-gray-900',
-                                    'rounded-input border',
-                                    errors.role
-                                        ? 'border-red-400 focus:ring-red-400'
-                                        : 'border-transparent focus:ring-primary-500',
-                                    'focus:outline-none focus:ring-2 focus:border-transparent',
-                                    'text-sm transition-shadow duration-150',
-                                    'appearance-none cursor-pointer',
-                                ].join(' ')}
-                                {...register('role', { required: 'Please select a role' })}
-                            >
-                                {ROLE_OPTIONS.map(({ value, label }) => (
-                                    <option key={value} value={value} disabled={value === ''}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.role && (
-                                <span role="alert" className="text-xs text-red-300 font-medium mt-0.5">
-                                    {errors.role.message}
-                                </span>
-                            )}
-                        </div>
-
-                        <FormInput
-                            id="password"
-                            label="Password"
-                            type="password"
-                            placeholder="••••••••"
-                            error={errors.password}
-                            registration={register('password', {
-                                required: 'Password is required',
-                                minLength: {
-                                    value: 6,
-                                    message: 'Password must be at least 6 characters',
-                                },
-                            })}
-                        />
-
-                        <FormInput
-                            id="confirmPassword"
-                            label="Confirm Password"
-                            type="password"
-                            placeholder="••••••••"
-                            error={errors.confirmPassword}
-                            registration={register('confirmPassword', {
-                                required: 'Please confirm your password',
-                                validate: (val) =>
-                                    val === password || 'Passwords do not match',
-                            })}
-                        />
-
-                        {/* Submit — primary medical blue, same as Login CTA */}
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className={[
-                                'w-full py-3 px-4 mt-1',
-                                'bg-primary-500 hover:bg-primary-600',
-                                'text-white font-semibold text-sm',
-                                'rounded-input',
-                                'transition-all duration-200',
-                                'hover:-translate-y-0.5 hover:shadow-lg',
-                                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
-                                'disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0',
-                            ].join(' ')}
-                        >
-                            {isSubmitting ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <svg
-                                        className="w-4 h-4 animate-spin"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        aria-hidden="true"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        />
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
-                                        />
-                                    </svg>
-                                    Creating account…
-                                </span>
-                            ) : (
-                                'CREATE ACCOUNT'
-                            )}
-                        </button>
-                    </form>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-3">
-                        <hr className={`flex-1 border-t ${dividerColor}`} />
-                        <span className={`text-xs font-medium ${dividerText}`}>OR</span>
-                        <hr className={`flex-1 border-t ${dividerColor}`} />
-                    </div>
-
-                    {/* Sign in link */}
-                    <p className={`text-sm text-center ${labelColor}`}>
-                        Already have an account?{' '}
-                        <Link
-                            to="/login"
-                            className="font-semibold underline hover:opacity-80 transition-opacity"
-                        >
-                            Sign in here
+                    <p className="text-center mt-5">
+                        <Link to="/" className="text-white/70 hover:text-white text-sm transition-colors flex items-center justify-center gap-1.5">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Back to Home
                         </Link>
                     </p>
                 </div>
-                {/* ── END Registration Card ──────────────────────────────── */}
-
             </div>
         </div>
     );
 }
-

@@ -1,8 +1,10 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import './Layout.css';
 import { extractRoleFromToken } from '../utils/auth';
+// logo loaded from /public so no import needed
 
-const NAVBAR_HIDDEN_ROUTES = ['/login', '/register'];
+// Dashboard routes own their full layout (sidebar + topbar), so hide the shared navbar
+const NAVBAR_HIDDEN_ROUTES = ['/', '/login', '/register', '/admin/dashboard', '/doctor/dashboard', '/patient/dashboard', '/dashboard'];
 
 function Layout() {
     const { pathname } = useLocation();
@@ -24,8 +26,8 @@ function Layout() {
 
     const navLinks = isLoggedIn
         ? [
-            { to: dashboardRoute, label: 'My Dashboard' },
-            { to: '/dashboard', label: 'Role Redirect' },
+            { to: dashboardRoute, label: 'Dashboard' },
+            { to: '/dashboard', label: 'Home' },
         ]
         : [
             { to: '/login', label: 'Login' },
@@ -42,9 +44,9 @@ function Layout() {
         <div className="layout">
             {!hideNavbar && (
                 <nav className="navbar">
-                    <Link to={isLoggedIn ? dashboardRoute : '/login'} className="navbar-brand">
-                        <img src="/hospital-bg.png" alt="HMS" className="brand-logo" />
-                        <span className="brand-name">HMS Portal</span>
+                    <Link to={isLoggedIn ? dashboardRoute : '/'} className="navbar-brand">
+                        <img src="/logo.png" alt="HEALIX" className="brand-logo" />
+                        <span className="brand-name">HEALIX</span>
                     </Link>
 
                     <ul className="nav-links">
