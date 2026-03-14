@@ -114,6 +114,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 builder.Services.AddScoped<IMedicineService, MedicineService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 var app = builder.Build();
 
@@ -585,6 +586,68 @@ app.MapDelete("/api/medicines/{medicineId:int}", async (
     CancellationToken cancellationToken) =>
 {
     var deleted = await medicineService.DeleteAsync(medicineId, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPost("/api/invoices", async (
+    InvoiceUpsertRequest request,
+    ClaimsPrincipal user,
+    IInvoiceService invoiceService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var result = await invoiceService.CreateAsync(request, currentUserId.Value, cancellationToken);
+    return result.Success
+        ? Results.Created($"/api/invoices/{result.Invoice!.InvoiceId}", result.Invoice)
+        : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/invoices", async (
+    string? status,
+    IInvoiceService invoiceService,
+    CancellationToken cancellationToken) =>
+{
+    var invoices = await invoiceService.GetAllAsync(status, cancellationToken);
+    return Results.Ok(invoices);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/invoices/{invoiceId:int}", async (
+    int invoiceId,
+    IInvoiceService invoiceService,
+    CancellationToken cancellationToken) =>
+{
+    var invoice = await invoiceService.GetByIdAsync(invoiceId, cancellationToken);
+    return invoice is null ? Results.NotFound() : Results.Ok(invoice);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPut("/api/invoices/{invoiceId:int}", async (
+    int invoiceId,
+    InvoiceUpsertRequest request,
+    ClaimsPrincipal user,
+    IInvoiceService invoiceService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var result = await invoiceService.UpdateAsync(invoiceId, request, currentUserId.Value, cancellationToken);
+    return result.Success ? Results.Ok(result.Invoice) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapDelete("/api/invoices/{invoiceId:int}", async (
+    int invoiceId,
+    IInvoiceService invoiceService,
+    CancellationToken cancellationToken) =>
+{
+    var deleted = await invoiceService.DeleteAsync(invoiceId, cancellationToken);
     return deleted ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 

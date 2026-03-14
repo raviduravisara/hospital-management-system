@@ -196,6 +196,11 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (id === 'invoices' || id === 'billing') {
+      navigate('/admin/invoices');
+      return;
+    }
+
     showToast(label);
   };
 
@@ -508,6 +513,11 @@ export default function AdminDashboard() {
                   const c = COLOR_MAP[color];
 
                   const handleActionClick = () => {
+                    if (label === 'Create Invoice') {
+                      navigate('/admin/invoices');
+                      return;
+                    }
+
                     if (label === 'Manage Medicines') {
                       navigate('/admin/medicines');
                       return;
