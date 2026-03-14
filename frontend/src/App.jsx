@@ -11,6 +11,7 @@ import DoctorScheduleSetup from './pages/DoctorScheduleSetup';
 import DoctorWeeklySchedule from './pages/DoctorWeeklySchedule';
 import AdminDashboard from './pages/AdminDashboard';
 import Medicines from './pages/Medicines';
+import InventoryManagement from './pages/InventoryManagement';
 import PatientDashboard from './pages/PatientDashboard';
 import PatientRegistration from './pages/PatientRegistration';
 import PatientProfile from './pages/PatientProfile';
@@ -30,6 +31,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route path="admin/medicines" element={<Medicines />} />
+          <Route path="admin/inventory" element={<InventoryManagement />} />
           <Route path="doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="doctor/register" element={<DoctorRegistration />} />
           <Route path="doctor/profile" element={<DoctorProfile />} />

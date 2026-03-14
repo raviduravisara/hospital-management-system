@@ -172,6 +172,41 @@ public sealed class MedicineService(MySqlConnectionFactory connectionFactory) : 
         return new MedicineOperationResult(true, "Medicine stock updated successfully.", medicine);
     }
 
+    public async Task<MedicineInventoryReportResponse> GetInventoryReportAsync(int? lowStockThreshold, string? status, CancellationToken cancellationToken)
+    {
+        var threshold = MedicineInventoryRules.NormalizeThreshold(lowStockThreshold);
+        var medicines = await GetAllAsync(null, cancellationToken);
+
+        var reportItems = medicines
+            .Select(item =>
+            {
+                var stockStatus = MedicineInventoryRules.GetStockStatus(item.StockQuantity, threshold);
+                return new MedicineInventoryReportItemResponse(
+                    MedicineId: item.MedicineId,
+                    MedicineName: item.MedicineName,
+                    Manufacturer: item.Manufacturer,
+                    StockQuantity: item.StockQuantity,
+                    UnitPrice: item.UnitPrice,
+                    IsLowStock: string.Equals(stockStatus, "LowStock", StringComparison.OrdinalIgnoreCase),
+                    IsOutOfStock: string.Equals(stockStatus, "OutOfStock", StringComparison.OrdinalIgnoreCase),
+                    StockStatus: stockStatus);
+            })
+            .Where(item => MedicineInventoryRules.IsStatusMatch(item.StockStatus, status))
+            .OrderBy(item => item.StockQuantity)
+            .ThenBy(item => item.MedicineName)
+            .ToList();
+
+        var lowStockItems = medicines.Count(item => MedicineInventoryRules.IsLowStock(item.StockQuantity, threshold));
+        var outOfStockItems = medicines.Count(item => MedicineInventoryRules.IsOutOfStock(item.StockQuantity));
+
+        return new MedicineInventoryReportResponse(
+            Threshold: threshold,
+            TotalItems: medicines.Count,
+            LowStockItems: lowStockItems,
+            OutOfStockItems: outOfStockItems,
+            Items: reportItems);
+    }
+
     public async Task<bool> DeleteAsync(int medicineId, CancellationToken cancellationToken)
     {
         await using var connection = connectionFactory.CreateConnection();

@@ -549,6 +549,16 @@ app.MapGet("/api/medicines/{medicineId:int}", async (
     return medicine is null ? Results.NotFound() : Results.Ok(medicine);
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
 
+app.MapGet("/api/medicines/inventory/report", async (
+    int? threshold,
+    string? status,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var report = await medicineService.GetInventoryReportAsync(threshold, status, cancellationToken);
+    return Results.Ok(report);
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
 app.MapPut("/api/medicines/{medicineId:int}", async (
     int medicineId,
     MedicineUpsertRequest request,

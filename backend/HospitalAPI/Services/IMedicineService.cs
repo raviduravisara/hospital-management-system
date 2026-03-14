@@ -14,5 +14,7 @@ public interface IMedicineService
 
     Task<MedicineOperationResult> UpdateStockAsync(int medicineId, int stockQuantity, CancellationToken cancellationToken);
 
+    Task<MedicineInventoryReportResponse> GetInventoryReportAsync(int? lowStockThreshold, string? status, CancellationToken cancellationToken);
+
     Task<bool> DeleteAsync(int medicineId, CancellationToken cancellationToken);
 }
