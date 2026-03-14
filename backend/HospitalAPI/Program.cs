@@ -316,6 +316,21 @@ app.MapGet("/api/patients/me/summary", async (
     return summary is null ? Results.NotFound() : Results.Ok(summary);
 }).RequireAuthorization(policy => policy.RequireRole("Patient"));
 
+app.MapGet("/api/patients/me/details", async (
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var details = await patientService.GetDashboardDetailsByUserIdAsync(currentUserId.Value, cancellationToken);
+    return details is null ? Results.NotFound() : Results.Ok(details);
+}).RequireAuthorization(policy => policy.RequireRole("Patient"));
+
 app.Run();
 
 static int? GetCurrentUserId(ClaimsPrincipal user)

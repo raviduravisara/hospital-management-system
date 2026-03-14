@@ -257,6 +257,170 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
             ProfileIsComplete(patient));
     }
 
+    public async Task<PatientDashboardDetailsResponse?> GetDashboardDetailsByUserIdAsync(int userId, CancellationToken cancellationToken)
+    {
+        var patient = await GetByUserIdAsync(userId, cancellationToken);
+        if (patient is null)
+        {
+            return null;
+        }
+
+        await using var connection = connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        var upcomingAppointments = await GetUpcomingAppointmentsAsync(connection, patient.PatientId, cancellationToken);
+        var recentPrescriptions = await GetRecentPrescriptionsAsync(connection, patient.PatientId, cancellationToken);
+        var recentLabReports = await GetRecentLabReportsAsync(connection, patient.PatientId, cancellationToken);
+        var pendingInvoices = await GetPendingInvoicesAsync(connection, patient.PatientId, cancellationToken);
+
+        return new PatientDashboardDetailsResponse(upcomingAppointments, recentPrescriptions, recentLabReports, pendingInvoices);
+    }
+
+    private static async Task<IReadOnlyList<PatientAppointmentOverview>> GetUpcomingAppointmentsAsync(
+        MySqlConnection connection,
+        int patientId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT
+                a.appointment_id,
+                a.appointment_date,
+                a.appointment_time,
+                a.status,
+                a.reason,
+                CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name
+            FROM Appointments a
+            LEFT JOIN Doctors d ON d.doctor_id = a.doctor_id
+            WHERE a.patient_id = @patientId
+              AND a.status IN ('Pending', 'Confirmed')
+            ORDER BY a.appointment_date ASC, a.appointment_time ASC
+            LIMIT 5;
+            """;
+        command.Parameters.AddWithValue("@patientId", patientId);
+
+        var items = new List<PatientAppointmentOverview>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PatientAppointmentOverview(
+                AppointmentId: reader.GetInt32(reader.GetOrdinal("appointment_id")),
+                AppointmentDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("appointment_date"))),
+                AppointmentTime: TimeOnly.FromTimeSpan(reader.GetFieldValue<TimeSpan>(reader.GetOrdinal("appointment_time"))),
+                Status: reader.GetString(reader.GetOrdinal("status")),
+                Reason: GetNullableString(reader, "reason"),
+                DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name"))));
+        }
+
+        return items;
+    }
+
+    private static async Task<IReadOnlyList<PatientPrescriptionOverview>> GetRecentPrescriptionsAsync(
+        MySqlConnection connection,
+        int patientId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT
+                p.prescription_id,
+                p.prescription_date,
+                p.diagnosis,
+                CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name
+            FROM Prescriptions p
+            LEFT JOIN Doctors d ON d.doctor_id = p.doctor_id
+            WHERE p.patient_id = @patientId
+            ORDER BY p.prescription_date DESC, p.prescription_id DESC
+            LIMIT 5;
+            """;
+        command.Parameters.AddWithValue("@patientId", patientId);
+
+        var items = new List<PatientPrescriptionOverview>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PatientPrescriptionOverview(
+                PrescriptionId: reader.GetInt32(reader.GetOrdinal("prescription_id")),
+                PrescriptionDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("prescription_date"))),
+                Diagnosis: GetNullableString(reader, "diagnosis"),
+                DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name"))));
+        }
+
+        return items;
+    }
+
+    private static async Task<IReadOnlyList<PatientLabReportOverview>> GetRecentLabReportsAsync(
+        MySqlConnection connection,
+        int patientId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT
+                lr.report_id,
+                lr.test_name,
+                lr.test_date,
+                lr.result_summary,
+                CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name
+            FROM Lab_Reports lr
+            LEFT JOIN Doctors d ON d.doctor_id = lr.doctor_id
+            WHERE lr.patient_id = @patientId
+            ORDER BY lr.test_date DESC, lr.report_id DESC
+            LIMIT 5;
+            """;
+        command.Parameters.AddWithValue("@patientId", patientId);
+
+        var items = new List<PatientLabReportOverview>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PatientLabReportOverview(
+                ReportId: reader.GetInt32(reader.GetOrdinal("report_id")),
+                TestName: reader.GetString(reader.GetOrdinal("test_name")),
+                TestDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("test_date"))),
+                ResultSummary: GetNullableString(reader, "result_summary"),
+                DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name"))));
+        }
+
+        return items;
+    }
+
+    private static async Task<IReadOnlyList<PatientInvoiceOverview>> GetPendingInvoicesAsync(
+        MySqlConnection connection,
+        int patientId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT
+                invoice_id,
+                invoice_date,
+                total_amount,
+                paid_amount,
+                status
+            FROM Invoices
+            WHERE patient_id = @patientId
+              AND status IN ('Unpaid', 'Partial')
+            ORDER BY invoice_date DESC, invoice_id DESC
+            LIMIT 5;
+            """;
+        command.Parameters.AddWithValue("@patientId", patientId);
+
+        var items = new List<PatientInvoiceOverview>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(new PatientInvoiceOverview(
+                InvoiceId: reader.GetInt32(reader.GetOrdinal("invoice_id")),
+                InvoiceDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("invoice_date"))),
+                TotalAmount: reader.GetDecimal(reader.GetOrdinal("total_amount")),
+                PaidAmount: reader.GetDecimal(reader.GetOrdinal("paid_amount")),
+                Status: reader.GetString(reader.GetOrdinal("status"))));
+        }
+
+        return items;
+    }
+
     private static async Task<int> ExecuteCountAsync(
         MySqlConnection connection,
         string sql,
