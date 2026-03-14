@@ -113,6 +113,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+builder.Services.AddScoped<IMedicineService, MedicineService>();
 
 var app = builder.Build();
 
@@ -518,6 +519,64 @@ app.MapGet("/api/doctors/{doctorId:int}/schedules", async (
     var schedules = await scheduleService.GetByDoctorIdAsync(doctorId, cancellationToken);
     return Results.Ok(schedules);
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
+app.MapPost("/api/medicines", async (
+    MedicineUpsertRequest request,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await medicineService.CreateAsync(request, cancellationToken);
+    return result.Success
+        ? Results.Created($"/api/medicines/{result.Medicine!.MedicineId}", result.Medicine)
+        : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/medicines", async (
+    string? search,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var medicines = await medicineService.GetAllAsync(search, cancellationToken);
+    return Results.Ok(medicines);
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
+app.MapGet("/api/medicines/{medicineId:int}", async (
+    int medicineId,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var medicine = await medicineService.GetByIdAsync(medicineId, cancellationToken);
+    return medicine is null ? Results.NotFound() : Results.Ok(medicine);
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
+app.MapPut("/api/medicines/{medicineId:int}", async (
+    int medicineId,
+    MedicineUpsertRequest request,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await medicineService.UpdateAsync(medicineId, request, cancellationToken);
+    return result.Success ? Results.Ok(result.Medicine) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapPut("/api/medicines/{medicineId:int}/stock", async (
+    int medicineId,
+    MedicineStockUpdateRequest request,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var result = await medicineService.UpdateStockAsync(medicineId, request.StockQuantity, cancellationToken);
+    return result.Success ? Results.Ok(result.Medicine) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapDelete("/api/medicines/{medicineId:int}", async (
+    int medicineId,
+    IMedicineService medicineService,
+    CancellationToken cancellationToken) =>
+{
+    var deleted = await medicineService.DeleteAsync(medicineId, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 app.Run();
 
