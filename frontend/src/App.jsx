@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -16,14 +17,14 @@ function App() {
       <Routes>
         {/* Public routes wrapped inside Layout */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/login" replace />} />
+          <Route index element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route path="doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="patient/dashboard" element={<PatientDashboard />} />
-          {/* Feature routes – uncomment after adding the page components */}
+          {/* Feature routes - uncomment after adding the page components */}
           {/* <Route path="prescriptions" element={<Prescriptions />} /> */}
           {/* <Route path="medicines" element={<Medicines />} /> */}
         </Route>

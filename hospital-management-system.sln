@@ -6,6 +6,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{1AE8
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalAPI", "backend\HospitalAPI\HospitalAPI.csproj", "{916900C1-B35B-1678-5C76-8A0F5F4686B1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A3B4C5D6-E7F8-90AB-CDEF-1234567890AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HospitalAPI.Tests", "tests\HospitalAPI.Tests\HospitalAPI.Tests.csproj", "{B4C5D6E7-F8A9-0BCD-EF12-34567890ABCD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,12 +20,17 @@ Global
 		{916900C1-B35B-1678-5C76-8A0F5F4686B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{916900C1-B35B-1678-5C76-8A0F5F4686B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{916900C1-B35B-1678-5C76-8A0F5F4686B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4C5D6E7-F8A9-0BCD-EF12-34567890ABCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4C5D6E7-F8A9-0BCD-EF12-34567890ABCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4C5D6E7-F8A9-0BCD-EF12-34567890ABCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4C5D6E7-F8A9-0BCD-EF12-34567890ABCD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{916900C1-B35B-1678-5C76-8A0F5F4686B1} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
+		{B4C5D6E7-F8A9-0BCD-EF12-34567890ABCD} = {A3B4C5D6-E7F8-90AB-CDEF-1234567890AB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3DFE67D-2486-45BA-AB08-F516ECC7272F}

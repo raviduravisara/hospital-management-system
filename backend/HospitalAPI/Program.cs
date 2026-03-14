@@ -85,12 +85,22 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy
-            .WithOrigins(
+        var configuredOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        var allowedOrigins = configuredOrigins.Length > 0
+            ? configuredOrigins
+            : new[]
+            {
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "http://localhost:5041",
-                "https://localhost:7041")
+                "https://localhost:7041"
+            };
+
+        policy
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -105,11 +115,13 @@ var app = builder.Build();
 
 await EnsureFixedAdminAsync(app.Services);
 
-if (app.Environment.IsDevelopment())
+// Swagger enabled in all environments for demo/evaluation access
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Hospital API v1");
+    options.RoutePrefix = "swagger";
+});
 
 if (!app.Environment.IsDevelopment())
 {
