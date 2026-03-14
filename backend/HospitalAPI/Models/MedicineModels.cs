@@ -20,3 +20,20 @@ public sealed record MedicineResponse(
     DateTime UpdatedAt);
 
 public sealed record MedicineOperationResult(bool Success, string Message, MedicineResponse? Medicine);
+
+public sealed record MedicineInventoryReportItemResponse(
+    int MedicineId,
+    string MedicineName,
+    string? Manufacturer,
+    int StockQuantity,
+    decimal UnitPrice,
+    bool IsLowStock,
+    bool IsOutOfStock,
+    string StockStatus);
+
+public sealed record MedicineInventoryReportResponse(
+    int Threshold,
+    int TotalItems,
+    int LowStockItems,
+    int OutOfStockItems,
+    IReadOnlyList<MedicineInventoryReportItemResponse> Items);

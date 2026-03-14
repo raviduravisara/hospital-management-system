@@ -166,12 +166,20 @@ export default function Medicines() {
             <h1 className="text-2xl font-bold text-slate-900">Medicine Management</h1>
             <p className="text-sm text-slate-500">Manage medicine records, inventory, and low-stock alerts.</p>
           </div>
-          <Link
-            to="/admin/dashboard"
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-          >
-            Back to Dashboard
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/inventory"
+              className="rounded-lg border border-teal-200 bg-white px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+            >
+              Inventory View
+            </Link>
+            <Link
+              to="/admin/dashboard"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
 
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">

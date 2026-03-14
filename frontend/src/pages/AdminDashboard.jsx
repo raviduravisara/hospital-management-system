@@ -68,6 +68,7 @@ const NAV_SECTIONS = [
       { id: 'appointments',  label: 'Appointments',  icon: 'calendar'  },
       { id: 'prescriptions', label: 'Prescriptions', icon: 'document'  },
       { id: 'medicines',     label: 'Medicines',     icon: 'pill'      },
+      { id: 'inventory',     label: 'Inventory',     icon: 'chart'     },
       { id: 'lab',           label: 'Lab Reports',   icon: 'flask'     },
     ],
   },
@@ -187,6 +188,11 @@ export default function AdminDashboard() {
 
     if (id === 'medicines') {
       navigate('/admin/medicines');
+      return;
+    }
+
+    if (id === 'inventory') {
+      navigate('/admin/inventory');
       return;
     }
 
@@ -496,6 +502,7 @@ export default function AdminDashboard() {
                   { label: 'View Audit Log',       icon: 'history',  color: 'indigo' },
                   { label: 'System Settings',      icon: 'cog',      color: 'rose'   },
                   { label: 'Manage Medicines',     icon: 'pill',     color: 'cyan'   },
+                  { label: 'Manage Inventory',     icon: 'chart',    color: 'amber'  },
                   { label: 'Lab Report Queue',     icon: 'flask',    color: 'green'  },
                 ].map(({ label, icon, color }) => {
                   const c = COLOR_MAP[color];
@@ -503,6 +510,11 @@ export default function AdminDashboard() {
                   const handleActionClick = () => {
                     if (label === 'Manage Medicines') {
                       navigate('/admin/medicines');
+                      return;
+                    }
+
+                    if (label === 'Manage Inventory') {
+                      navigate('/admin/inventory');
                       return;
                     }
 
