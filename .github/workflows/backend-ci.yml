@@ -27,5 +27,15 @@ jobs:
       - name: Build
         run: dotnet build backend/HospitalAPI/HospitalAPI.csproj --configuration Release --no-restore
 
+      - name: Build tests
+        run: dotnet build tests/HospitalAPI.Tests/HospitalAPI.Tests.csproj --configuration Release
+
       - name: Test
-        run: dotnet test backend/HospitalAPI/HospitalAPI.csproj --configuration Release --no-build
+        run: dotnet test tests/HospitalAPI.Tests/HospitalAPI.Tests.csproj --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --verbosity normal
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/*.trx"

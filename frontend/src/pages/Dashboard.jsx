@@ -27,10 +27,10 @@ function Dashboard() {
     };
 
     const stats = [
-        { label: 'Total Patients', value: '1,284', icon: '🧑‍🤝‍🧑', color: '#1a56db' },
-        { label: 'Appointments Today', value: '48', icon: '📅', color: '#0e9f6e' },
-        { label: 'Active Doctors', value: '32', icon: '🩺', color: '#7e3af2' },
-        { label: 'Beds Available', value: '64', icon: '🛏️', color: '#e3a008' },
+        { label: 'Total Patients', value: '1,284', icon: 'Patients', color: '#1a56db' },
+        { label: 'Appointments Today', value: '48', icon: 'Appointments', color: '#0e9f6e' },
+        { label: 'Active Doctors', value: '32', icon: 'Doctors', color: '#7e3af2' },
+        { label: 'Beds Available', value: '64', icon: 'Beds', color: '#e3a008' },
     ];
 
     return (
@@ -38,7 +38,7 @@ function Dashboard() {
             <div className="dashboard-header">
                 <div>
                     <h1>Dashboard</h1>
-                    <p>Welcome back! Here's your hospital overview.</p>
+                    <p>Welcome back. Here is your hospital overview.</p>
                 </div>
                 <button className="btn-logout" onClick={handleLogout}>
                     Logout
@@ -58,7 +58,7 @@ function Dashboard() {
             </div>
 
             <div className="placeholder-section">
-                <p>📊 More analytics and management modules will appear here.</p>
+                <p>More analytics and management modules will appear here.</p>
             </div>
         </div>
     );
