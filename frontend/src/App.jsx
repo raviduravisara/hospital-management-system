@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import DoctorRegistration from './pages/DoctorRegistration';
 import DoctorProfile from './pages/DoctorProfile';
+import DoctorScheduleSetup from './pages/DoctorScheduleSetup';
+import DoctorWeeklySchedule from './pages/DoctorWeeklySchedule';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import PatientRegistration from './pages/PatientRegistration';
@@ -29,6 +31,8 @@ function App() {
           <Route path="doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="doctor/register" element={<DoctorRegistration />} />
           <Route path="doctor/profile" element={<DoctorProfile />} />
+          <Route path="doctor/schedule" element={<DoctorScheduleSetup />} />
+          <Route path="doctor/schedule/weekly" element={<DoctorWeeklySchedule />} />
           <Route path="patient/dashboard" element={<PatientDashboard />} />
           <Route path="patient/register" element={<PatientRegistration />} />
           <Route path="patient/profile" element={<PatientProfile />} />

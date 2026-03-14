@@ -183,7 +183,21 @@ export default function DoctorDashboard() {
 
   const handleNav = (id, label) => {
     setActiveNav(id);
-    if (id !== 'dashboard') showToast(label);
+    if (id === 'dashboard') {
+      return;
+    }
+
+    if (id === 'schedule' || id === 'availability') {
+      navigate('/doctor/schedule');
+      return;
+    }
+
+    if (id === 'profile') {
+      navigate('/doctor/profile');
+      return;
+    }
+
+    showToast(label);
   };
 
   const completedToday = TODAY_APPOINTMENTS.filter(a => a.status === 'Completed').length;
@@ -480,10 +494,25 @@ export default function DoctorDashboard() {
                 { label: 'My Profile Settings',   icon: 'user',      color: 'indigo' },
               ].map(({ label, icon, color }) => {
                 const c = COLOR_MAP[color];
+                const routeByLabel = {
+                  'Mark Availability': '/doctor/schedule',
+                  'My Profile Settings': '/doctor/profile',
+                };
+
+                const handleActionClick = () => {
+                  const route = routeByLabel[label];
+                  if (route) {
+                    navigate(route);
+                    return;
+                  }
+
+                  showToast(label);
+                };
+
                 return (
                   <button
                     key={label}
-                    onClick={() => showToast(label)}
+                    onClick={handleActionClick}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold ${c.bg} hover:shadow-sm active:scale-95 transition-all ring-1 ${c.ring}`}
                   >
                     <div className={`w-8 h-8 rounded-lg ${c.icon} flex items-center justify-center shrink-0`}>
