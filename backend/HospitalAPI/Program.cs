@@ -111,6 +111,7 @@ builder.Services.AddSingleton<IRefreshTokenStore, InMemoryRefreshTokenStore>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IDoctorService, DoctorService>();
 
 var app = builder.Build();
 
@@ -330,6 +331,127 @@ app.MapGet("/api/patients/me/details", async (
     var details = await patientService.GetDashboardDetailsByUserIdAsync(currentUserId.Value, cancellationToken);
     return details is null ? Results.NotFound() : Results.Ok(details);
 }).RequireAuthorization(policy => policy.RequireRole("Patient"));
+
+app.MapPost("/api/doctors", async (
+    DoctorUpsertRequest request,
+    ClaimsPrincipal user,
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var role = GetCurrentRole(user);
+    var currentUserId = GetCurrentUserId(user);
+
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var targetUserId = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+        ? request.UserId ?? currentUserId.Value
+        : currentUserId.Value;
+
+    var result = await doctorService.CreateAsync(request, targetUserId, cancellationToken);
+    return result.Success
+        ? Results.Created($"/api/doctors/{result.Doctor!.DoctorId}", result.Doctor)
+        : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Doctor", "Admin"));
+
+app.MapGet("/api/doctors", async (
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var doctors = await doctorService.GetAllAsync(cancellationToken);
+    return Results.Ok(doctors);
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
+
+app.MapGet("/api/doctors/{doctorId:int}", async (
+    int doctorId,
+    ClaimsPrincipal user,
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var profile = await doctorService.GetByIdAsync(doctorId, cancellationToken);
+    if (profile is null)
+    {
+        return Results.NotFound();
+    }
+
+    var role = GetCurrentRole(user);
+    var currentUserId = GetCurrentUserId(user);
+    var isAllowed = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || (string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase)
+                        && currentUserId == profile.UserId);
+
+    return isAllowed ? Results.Ok(profile) : Results.Forbid();
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
+app.MapGet("/api/doctors/me", async (
+    ClaimsPrincipal user,
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var profile = await doctorService.GetByUserIdAsync(currentUserId.Value, cancellationToken);
+    return profile is null ? Results.NotFound() : Results.Ok(profile);
+}).RequireAuthorization(policy => policy.RequireRole("Doctor"));
+
+app.MapPut("/api/doctors/{doctorId:int}", async (
+    int doctorId,
+    DoctorUpsertRequest request,
+    ClaimsPrincipal user,
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var profile = await doctorService.GetByIdAsync(doctorId, cancellationToken);
+    if (profile is null)
+    {
+        return Results.NotFound();
+    }
+
+    var role = GetCurrentRole(user);
+    var currentUserId = GetCurrentUserId(user);
+    var isAllowed = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+                    || (string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase)
+                        && currentUserId == profile.UserId);
+
+    if (!isAllowed)
+    {
+        return Results.Forbid();
+    }
+
+    var result = await doctorService.UpdateByIdAsync(doctorId, request, cancellationToken);
+    return result.Success ? Results.Ok(result.Doctor) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
+app.MapPut("/api/doctors/me", async (
+    DoctorUpsertRequest request,
+    ClaimsPrincipal user,
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var result = await doctorService.UpdateByUserIdAsync(currentUserId.Value, request, cancellationToken);
+    return result.Success ? Results.Ok(result.Doctor) : Results.BadRequest(result);
+}).RequireAuthorization(policy => policy.RequireRole("Doctor"));
+
+app.MapDelete("/api/doctors/{doctorId:int}", async (
+    int doctorId,
+    IDoctorService doctorService,
+    CancellationToken cancellationToken) =>
+{
+    var deleted = await doctorService.DeleteAsync(doctorId, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 app.Run();
 
