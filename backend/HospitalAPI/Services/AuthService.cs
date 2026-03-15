@@ -60,15 +60,23 @@ public sealed class AuthService(
         insertCommand.CommandText = """
             INSERT INTO Users (username, email, password_hash, role, is_active)
             VALUES (@username, @email, @passwordHash, @role, 1);
-            SELECT LAST_INSERT_ID();
             """;
         insertCommand.Parameters.AddWithValue("@username", request.Username.Trim());
         insertCommand.Parameters.AddWithValue("@email", request.Email.Trim());
         insertCommand.Parameters.AddWithValue("@passwordHash", passwordHash);
         insertCommand.Parameters.AddWithValue("@role", role);
 
-        var userIdObj = await insertCommand.ExecuteScalarAsync(cancellationToken);
-        var userId = Convert.ToInt32(userIdObj);
+        await insertCommand.ExecuteNonQueryAsync(cancellationToken);
+        var userId = Convert.ToInt32(insertCommand.LastInsertedId);
+
+        if (userId <= 0)
+        {
+            await using var idCommand = connection.CreateCommand();
+            idCommand.CommandText = "SELECT LAST_INSERT_ID();";
+            var idObj = await idCommand.ExecuteScalarAsync(cancellationToken);
+            userId = Convert.ToInt32(idObj);
+        }
+
         return new RegisterResult(true, "Registration successful.", userId);
     }
 
