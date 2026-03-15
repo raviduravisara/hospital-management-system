@@ -40,24 +40,9 @@ jobs:
     needs: dockerize-and-push
 
     steps:
-      - name: Azure Login
-        uses: azure/login@v2
+      - name: Deploy container to Azure Web App
+        uses: azure/webapps-deploy@v3
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Point App Service to latest Docker image
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az webapp config container set \
-              --resource-group hms-rg \
-              --name hospital-management-api \
-              --docker-custom-image-name docker.io/${{ secrets.DOCKERHUB_USERNAME }}/hospital-management-api:latest
-
-      - name: Restart App Service
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az webapp restart \
-              --resource-group hms-rg \
-              --name hospital-management-api
+          app-name: hospital-management-api
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/hospital-management-api:latest
