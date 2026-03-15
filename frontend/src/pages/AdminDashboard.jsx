@@ -68,6 +68,7 @@ const NAV_SECTIONS = [
       { id: 'appointments',  label: 'Appointments',  icon: 'calendar'  },
       { id: 'prescriptions', label: 'Prescriptions', icon: 'document'  },
       { id: 'medicines',     label: 'Medicines',     icon: 'pill'      },
+      { id: 'inventory',     label: 'Inventory',     icon: 'chart'     },
       { id: 'lab',           label: 'Lab Reports',   icon: 'flask'     },
     ],
   },
@@ -180,10 +181,32 @@ export default function AdminDashboard() {
   const handleNav = (id, label) => {
     if (id === 'dashboard') {
       setActiveNav('dashboard');
-    } else {
-      setActiveNav(id);
-      showToast(label);
+      return;
     }
+
+    setActiveNav(id);
+
+    if (id === 'medicines') {
+      navigate('/admin/medicines');
+      return;
+    }
+
+    if (id === 'users') {
+      navigate('/admin/users');
+      return;
+    }
+
+    if (id === 'inventory') {
+      navigate('/admin/inventory');
+      return;
+    }
+
+    if (id === 'invoices' || id === 'billing') {
+      navigate('/admin/invoices');
+      return;
+    }
+
+    showToast(label);
   };
 
   return (
@@ -489,13 +512,39 @@ export default function AdminDashboard() {
                   { label: 'View Audit Log',       icon: 'history',  color: 'indigo' },
                   { label: 'System Settings',      icon: 'cog',      color: 'rose'   },
                   { label: 'Manage Medicines',     icon: 'pill',     color: 'cyan'   },
+                  { label: 'Manage Inventory',     icon: 'chart',    color: 'amber'  },
                   { label: 'Lab Report Queue',     icon: 'flask',    color: 'green'  },
                 ].map(({ label, icon, color }) => {
                   const c = COLOR_MAP[color];
+
+                  const handleActionClick = () => {
+                    if (label === 'Add New User') {
+                      navigate('/admin/users');
+                      return;
+                    }
+
+                    if (label === 'Create Invoice') {
+                      navigate('/admin/invoices');
+                      return;
+                    }
+
+                    if (label === 'Manage Medicines') {
+                      navigate('/admin/medicines');
+                      return;
+                    }
+
+                    if (label === 'Manage Inventory') {
+                      navigate('/admin/inventory');
+                      return;
+                    }
+
+                    showToast(label);
+                  };
+
                   return (
                     <button
                       key={label}
-                      onClick={() => showToast(label)}
+                      onClick={handleActionClick}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold ${c.bg} ${c.icon.split(' ')[1]} hover:shadow-sm active:scale-95 transition-all ring-1 ${c.ring}`}
                     >
                       <div className={`w-8 h-8 rounded-lg ${c.icon} flex items-center justify-center shrink-0`}>
