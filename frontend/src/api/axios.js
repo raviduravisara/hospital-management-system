@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+const PROD_API_FALLBACK = 'https://hospital-management-api-avaechaue2fdghdk.southeastasia-01.azurewebsites.net';
+const DEV_API_FALLBACK = 'http://localhost:5041';
+const baseURL = import.meta.env.VITE_API_BASE_URL
+  || (import.meta.env.PROD ? PROD_API_FALLBACK : DEV_API_FALLBACK);
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5041',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
