@@ -69,6 +69,6 @@ jobs:
       - name: Deploy container to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: hospital-management-api
+          app-name: hospital-management-api-avaechaue2fdghdk
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: docker.io/${{ env.DOCKERHUB_USER }}/hospital-management-api:latest
