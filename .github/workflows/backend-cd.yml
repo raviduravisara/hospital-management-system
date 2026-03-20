@@ -3,7 +3,8 @@ name: Backend CD
 on:
   push:
     branches:
-      - main
+      - development
+      - fix/backend-cd-webhook
     paths:
       - "backend/**"
       - ".github/workflows/backend-cd.yml"
@@ -54,21 +55,8 @@ jobs:
   redeploy-azure-appservice:
     runs-on: ubuntu-latest
     needs: dockerize-and-push
-    env:
-      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
 
     steps:
-      - name: Validate image source
+      - name: Trigger Azure App Service container redeploy
+        run: curl -X POST "${{ secrets.AZURE_WEBAPP_WEBHOOK_URL }}"
         shell: bash
-        run: |
-          if [ -z "$DOCKERHUB_USER" ]; then
-            echo "::error::DOCKERHUB_USERNAME is empty or not available to deploy job."
-            exit 1
-          fi
-
-      - name: Deploy container to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: hospital-management-api-avaechaue2fdghdk
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          images: docker.io/${{ env.DOCKERHUB_USER }}/hospital-management-api:latest
