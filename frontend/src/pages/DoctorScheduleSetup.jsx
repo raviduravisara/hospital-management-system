@@ -1,8 +1,12 @@
+// Doctor Schedule Setup Page
+// Handles weekly availability, time slots, and schedule configuration for doctors
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { extractRoleFromToken } from '../utils/auth';
 
+// Days of the week used to generate default schedule rows
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const defaultRows = DAYS.map((day) => ({
