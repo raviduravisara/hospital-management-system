@@ -98,7 +98,7 @@ CREATE TABLE Appointments (
         ON DELETE CASCADE,
     CONSTRAINT fk_appointments_doctor
         FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
-        ON DELETE CASCADE
+        ON DELETE RESTRICT
 );
 
 CREATE TABLE Prescriptions (
@@ -119,7 +119,7 @@ CREATE TABLE Prescriptions (
         ON DELETE CASCADE,
     CONSTRAINT fk_prescriptions_doctor
         FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
-        ON DELETE CASCADE
+        ON DELETE RESTRICT
 );
 
 CREATE TABLE Medicines (
