@@ -22,3 +22,5 @@ public sealed record DoctorProfileResponse(
     DateTime UpdatedAt);
 
 public sealed record DoctorOperationResult(bool Success, string Message, DoctorProfileResponse? Doctor);
+
+public sealed record DoctorDeleteResult(bool Success, string Message, bool NotFound = false);

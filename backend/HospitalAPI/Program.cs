@@ -453,8 +453,15 @@ app.MapDelete("/api/doctors/{doctorId:int}", async (
     IDoctorService doctorService,
     CancellationToken cancellationToken) =>
 {
-    var deleted = await doctorService.DeleteAsync(doctorId, cancellationToken);
-    return deleted ? Results.NoContent() : Results.NotFound();
+    var result = await doctorService.DeleteAsync(doctorId, cancellationToken);
+    if (result.NotFound)
+    {
+        return Results.NotFound(new { message = result.Message });
+    }
+
+    return result.Success
+        ? Results.NoContent()
+        : Results.BadRequest(new { message = result.Message });
 }).RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 app.MapGet("/api/doctors/me/schedules", async (

@@ -240,17 +240,55 @@ public sealed class DoctorService(MySqlConnectionFactory connectionFactory) : ID
         return await UpdateByIdAsync(profile.DoctorId, request, cancellationToken);
     }
 
-    public async Task<bool> DeleteAsync(int doctorId, CancellationToken cancellationToken)
+    public async Task<DoctorDeleteResult> DeleteAsync(int doctorId, CancellationToken cancellationToken)
     {
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
+
+        await using (var appointmentCheck = connection.CreateCommand())
+        {
+            appointmentCheck.CommandText = """
+                SELECT COUNT(*)
+                FROM Appointments
+                WHERE doctor_id = @doctorId;
+                """;
+            appointmentCheck.Parameters.AddWithValue("@doctorId", doctorId);
+
+            var appointmentCount = Convert.ToInt32(await appointmentCheck.ExecuteScalarAsync(cancellationToken));
+            if (appointmentCount > 0)
+            {
+                return new DoctorDeleteResult(
+                    false,
+                    "Cannot delete this doctor because existing appointments are linked to the profile.");
+            }
+        }
+
+        await using (var prescriptionCheck = connection.CreateCommand())
+        {
+            prescriptionCheck.CommandText = """
+                SELECT COUNT(*)
+                FROM Prescriptions
+                WHERE doctor_id = @doctorId;
+                """;
+            prescriptionCheck.Parameters.AddWithValue("@doctorId", doctorId);
+
+            var prescriptionCount = Convert.ToInt32(await prescriptionCheck.ExecuteScalarAsync(cancellationToken));
+            if (prescriptionCount > 0)
+            {
+                return new DoctorDeleteResult(
+                    false,
+                    "Cannot delete this doctor because existing prescriptions are linked to the profile.");
+            }
+        }
 
         await using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM Doctors WHERE doctor_id = @doctorId;";
         command.Parameters.AddWithValue("@doctorId", doctorId);
 
         var affected = await command.ExecuteNonQueryAsync(cancellationToken);
-        return affected > 0;
+        return affected > 0
+            ? new DoctorDeleteResult(true, "Doctor deleted successfully.")
+            : new DoctorDeleteResult(false, "Doctor profile not found.", NotFound: true);
     }
 
     private static DoctorProfileResponse MapDoctor(DbDataReader reader)
