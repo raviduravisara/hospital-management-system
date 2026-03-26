@@ -16,5 +16,5 @@ public interface IDoctorService
 
     Task<DoctorOperationResult> UpdateByUserIdAsync(int userId, DoctorUpsertRequest request, CancellationToken cancellationToken);
 
-    Task<bool> DeleteAsync(int doctorId, CancellationToken cancellationToken);
+    Task<DoctorDeleteResult> DeleteAsync(int doctorId, CancellationToken cancellationToken);
 }
