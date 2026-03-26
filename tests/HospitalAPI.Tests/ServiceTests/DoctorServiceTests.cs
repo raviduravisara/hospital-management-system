@@ -217,28 +217,34 @@ public sealed class DoctorServiceTests
     // ─────────────────────────────────────────────
 
     [Fact]
-    public async Task DeleteAsync_ExistingDoctor_ReturnsTrue()
+    public async Task DeleteAsync_ExistingDoctor_ReturnsSuccess()
     {
         // Arrange
-        _serviceMock.Setup(s => s.DeleteAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _serviceMock
+            .Setup(s => s.DeleteAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DoctorDeleteResult(true, "Doctor deleted successfully."));
 
         // Act
         var result = await _serviceMock.Object.DeleteAsync(1, CancellationToken.None);
 
         // Assert
-        result.Should().BeTrue();
+        result.Success.Should().BeTrue();
+        result.NotFound.Should().BeFalse();
     }
 
     [Fact]
-    public async Task DeleteAsync_NonExistentDoctor_ReturnsFalse()
+    public async Task DeleteAsync_NonExistentDoctor_ReturnsNotFound()
     {
         // Arrange
-        _serviceMock.Setup(s => s.DeleteAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _serviceMock
+            .Setup(s => s.DeleteAsync(999, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DoctorDeleteResult(false, "Doctor profile not found.", NotFound: true));
 
         // Act
         var result = await _serviceMock.Object.DeleteAsync(999, CancellationToken.None);
 
         // Assert
-        result.Should().BeFalse();
+        result.Success.Should().BeFalse();
+        result.NotFound.Should().BeTrue();
     }
 }
