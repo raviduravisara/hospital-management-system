@@ -9,9 +9,11 @@ public sealed class AppointmentService(MySqlConnectionFactory connectionFactory)
     {
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
 
         await using (var check = connection.CreateCommand())
         {
+            check.Transaction = (MySql.Data.MySqlClient.MySqlTransaction)transaction;
             check.CommandText = """
                 SELECT COUNT(*)
                 FROM Appointments
@@ -32,6 +34,7 @@ public sealed class AppointmentService(MySqlConnectionFactory connectionFactory)
         }
 
         await using var cmd = connection.CreateCommand();
+        cmd.Transaction = (MySql.Data.MySqlClient.MySqlTransaction)transaction;
 cmd.CommandText = """
     INSERT INTO Appointments
     (patient_id, doctor_id, appointment_date, appointment_time, status, reason)
@@ -47,6 +50,7 @@ cmd.Parameters.AddWithValue("@time", request.AppointmentTime);
 cmd.Parameters.AddWithValue("@reason", request.Reason);
 
 var id = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken));
+await transaction.CommitAsync(cancellationToken);
 var appointment = await GetByIdAsync(id, cancellationToken);
 
 return new(true, "Appointment created successfully.", appointment);
@@ -123,9 +127,11 @@ return new(true, "Appointment created successfully.", appointment);
     {
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
 
         await using (var check = connection.CreateCommand())
         {
+            check.Transaction = (MySql.Data.MySqlClient.MySqlTransaction)transaction;
             check.CommandText = """
                 SELECT COUNT(*)
                 FROM Appointments
@@ -148,6 +154,7 @@ return new(true, "Appointment created successfully.", appointment);
         }
 
         await using var cmd = connection.CreateCommand();
+        cmd.Transaction = (MySql.Data.MySqlClient.MySqlTransaction)transaction;
         cmd.CommandText = """
             UPDATE Appointments
             SET doctor_id = @doctorId,
@@ -165,6 +172,7 @@ return new(true, "Appointment created successfully.", appointment);
         cmd.Parameters.AddWithValue("@id", appointmentId);
 
         var rows = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         if (rows == 0)
             return new(false, "Appointment not found.", null);
