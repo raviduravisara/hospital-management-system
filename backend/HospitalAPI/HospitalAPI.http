@@ -47,3 +47,63 @@ Authorization: Bearer {{AccessToken}}
 ### Admin test route
 GET {{HospitalAPI_HostAddress}}/api/admin/ping
 Authorization: Bearer {{AccessToken}}
+
+### Patient Lab Reports - List
+GET {{HospitalAPI_HostAddress}}/api/patients/me/lab-reports
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+### Patient Lab Reports - Get by Id
+GET {{HospitalAPI_HostAddress}}/api/patients/me/lab-reports/1
+Authorization: Bearer {{AccessToken}}
+Accept: application/json
+
+### Patient Lab Reports - Create (multipart)
+POST {{HospitalAPI_HostAddress}}/api/patients/me/lab-reports
+Authorization: Bearer {{AccessToken}}
+Content-Type: multipart/form-data; boundary=LabBoundary
+
+--LabBoundary
+Content-Disposition: form-data; name="testName"
+
+Complete Blood Count
+--LabBoundary
+Content-Disposition: form-data; name="testDate"
+
+2026-04-03
+--LabBoundary
+Content-Disposition: form-data; name="resultSummary"
+
+All values are within normal range.
+--LabBoundary--
+
+### Patient Lab Reports - Update (multipart)
+PUT {{HospitalAPI_HostAddress}}/api/patients/me/lab-reports/1
+Authorization: Bearer {{AccessToken}}
+Content-Type: multipart/form-data; boundary=LabBoundaryUpdate
+
+--LabBoundaryUpdate
+Content-Disposition: form-data; name="testName"
+
+Complete Blood Count (Recheck)
+--LabBoundaryUpdate
+Content-Disposition: form-data; name="testDate"
+
+2026-04-04
+--LabBoundaryUpdate
+Content-Disposition: form-data; name="resultSummary"
+
+Updated summary from recheck.
+--LabBoundaryUpdate
+Content-Disposition: form-data; name="removeExistingFile"
+
+false
+--LabBoundaryUpdate--
+
+### Patient Lab Reports - Download
+GET {{HospitalAPI_HostAddress}}/api/patients/me/lab-reports/1/download
+Authorization: Bearer {{AccessToken}}
+
+### Patient Lab Reports - Delete
+DELETE {{HospitalAPI_HostAddress}}/api/patients/me/lab-reports/1
+Authorization: Bearer {{AccessToken}}

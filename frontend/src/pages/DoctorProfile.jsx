@@ -11,6 +11,7 @@ export default function DoctorProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
+  const [profileNotFound, setProfileNotFound] = useState(false);
 
   const {
     register,
@@ -36,6 +37,7 @@ export default function DoctorProfile() {
         });
       } catch (err) {
         if (err.response?.status === 404) {
+          setProfileNotFound(true);
           setError('Profile not found. Please create your doctor profile first.');
         } else {
           setError('Unable to load doctor profile.');
@@ -55,20 +57,27 @@ export default function DoctorProfile() {
     setError('');
     setSaveMessage('');
 
-    try {
-      await axiosInstance.put('/api/doctors/me', {
-        userId: null,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        specialization: data.specialization || null,
-        licenseNumber: data.licenseNumber,
-        phone: data.phone || null,
-        consultationFee: Number(data.consultationFee || 0),
-      });
+    const requestBody = {
+      userId: null,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      specialization: data.specialization || null,
+      licenseNumber: data.licenseNumber,
+      phone: data.phone || null,
+      consultationFee: Number(data.consultationFee || 0),
+    };
 
-      setSaveMessage('Profile updated successfully.');
+    try {
+      if (profileNotFound) {
+        await axiosInstance.post('/api/doctors', requestBody);
+        setSaveMessage('Profile created successfully.');
+        setProfileNotFound(false);
+      } else {
+        await axiosInstance.put('/api/doctors/me', requestBody);
+        setSaveMessage('Profile updated successfully.');
+      }
     } catch (err) {
-      setError(err.response?.data?.message ?? 'Unable to update profile.');
+      setError(err.response?.data?.message ?? (profileNotFound ? 'Unable to create profile.' : 'Unable to update profile.'));
     }
   };
 
