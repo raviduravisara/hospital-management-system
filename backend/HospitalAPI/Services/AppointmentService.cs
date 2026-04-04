@@ -191,6 +191,23 @@ return new(true, "Appointment created successfully.", appointment);
 
     public async Task<AppointmentOperationResult> UpdateStatusAsync(int appointmentId, AppointmentStatusUpdateRequest request, CancellationToken cancellationToken = default)
     {
+        var current = await GetByIdAsync(appointmentId, cancellationToken);
+        if (current == null) return new(false, "Appointment not found.", null);
+
+        // Prevent ghost updates (State Machine Enforcement)
+        var validTransitions = new Dictionary<string, string[]>
+        {
+            ["Pending"] = ["Confirmed", "Cancelled"],
+            ["Confirmed"] = ["Completed", "Cancelled"],
+            ["Completed"] = [], // Terminal state, cannot be changed
+            ["Cancelled"] = []  // Terminal state, cannot be changed
+        };
+
+        if (validTransitions.TryGetValue(current.Status, out var allowed) && !allowed.Contains(request.Status))
+        {
+            return new(false, $"Cannot transition appointment status from '{current.Status}' to '{request.Status}'.", null);
+        }
+
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
