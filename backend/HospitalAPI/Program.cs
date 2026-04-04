@@ -308,7 +308,15 @@ app.MapDelete("/api/patients/{patientId:int}", async (
     IPatientService patientService,
     CancellationToken cancellationToken) =>
 {
-    var deleted = await patientService.DeleteAsync(patientId, cancellationToken);
+    bool deleted;
+    try
+    {
+        deleted = await patientService.DeleteAsync(patientId, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
     return deleted ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Patient"));
 
@@ -1219,7 +1227,15 @@ app.MapDelete("/api/medicines/{medicineId:int}", async (
     IMedicineService medicineService,
     CancellationToken cancellationToken) =>
 {
-    var deleted = await medicineService.DeleteAsync(medicineId, cancellationToken);
+    bool deleted;
+    try
+    {
+        deleted = await medicineService.DeleteAsync(medicineId, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
     return deleted ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Patient"));
 
@@ -1810,7 +1826,15 @@ app.MapDelete("/api/users/{userId:int}", async (
         return Results.BadRequest(new { message = "You cannot delete your own account." });
     }
 
-    var deleted = await userManagementService.DeleteAsync(userId, cancellationToken);
+    bool deleted;
+    try
+    {
+        deleted = await userManagementService.DeleteAsync(userId, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
     return deleted ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Patient"));
 
