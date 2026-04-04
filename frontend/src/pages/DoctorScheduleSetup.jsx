@@ -27,6 +27,7 @@ export default function DoctorScheduleSetup() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [doctorProfileMissing, setDoctorProfileMissing] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -54,7 +55,12 @@ export default function DoctorScheduleSetup() {
 
         setRows(defaultRows.map((row) => byDay.get(row.dayOfWeek) ?? row));
       } catch (requestError) {
-        setError(requestError.response?.data?.message || 'Unable to load existing schedule.');
+        if (requestError.response?.status === 404) {
+          setDoctorProfileMissing(true);
+          setError('Doctor profile not found. Please register your doctor profile before setting up your schedule.');
+        } else {
+          setError(requestError.response?.data?.message || 'Unable to load existing schedule.');
+        }
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -142,6 +148,17 @@ export default function DoctorScheduleSetup() {
 
         {error && <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
         {success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>}
+        {doctorProfileMissing && (
+          <div className="mb-4 rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+            <p>Please visit the profile page to create your doctor profile before configuring availability.</p>
+            <Link
+              to="/doctor/register"
+              className="mt-3 inline-flex items-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+            >
+              Register Doctor Profile
+            </Link>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
           <div className="overflow-x-auto">
