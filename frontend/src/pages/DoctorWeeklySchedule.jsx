@@ -12,6 +12,7 @@ export default function DoctorWeeklySchedule() {
   const [schedules, setSchedules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [doctorProfileMissing, setDoctorProfileMissing] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -24,7 +25,12 @@ export default function DoctorWeeklySchedule() {
         }
       } catch (requestError) {
         if (isMounted) {
-          setError(requestError.response?.data?.message || 'Unable to load weekly schedule.');
+          if (requestError.response?.status === 404) {
+            setDoctorProfileMissing(true);
+            setError('Doctor profile not found. Please create your doctor profile to access schedule details.');
+          } else {
+            setError(requestError.response?.data?.message || 'Unable to load weekly schedule.');
+          }
         }
       } finally {
         if (isMounted) {
@@ -86,6 +92,17 @@ export default function DoctorWeeklySchedule() {
 
         {isLoading && <div className="rounded-lg bg-white p-4 text-sm text-slate-500 ring-1 ring-slate-200">Loading schedule...</div>}
         {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+        {doctorProfileMissing && (
+          <div className="mb-4 rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+            <p>Please create your doctor profile first to view weekly schedule details.</p>
+            <Link
+              to="/doctor/register"
+              className="mt-3 inline-flex items-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
+            >
+              Register Doctor Profile
+            </Link>
+          </div>
+        )}
 
         {!isLoading && !error && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
