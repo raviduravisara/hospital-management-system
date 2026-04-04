@@ -1297,7 +1297,15 @@ app.MapDelete("/api/invoices/{invoiceId:int}", async (
     IInvoiceService invoiceService,
     CancellationToken cancellationToken) =>
 {
-    var deleted = await invoiceService.DeleteAsync(invoiceId, cancellationToken);
+    bool deleted;
+    try
+    {
+        deleted = await invoiceService.DeleteAsync(invoiceId, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { message = ex.Message });
+    }
     return deleted ? Results.NoContent() : Results.NotFound();
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Patient"));
 
