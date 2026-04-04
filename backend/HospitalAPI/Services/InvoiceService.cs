@@ -163,6 +163,17 @@ public sealed class InvoiceService(MySqlConnectionFactory connectionFactory) : I
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
+        await using (var check = connection.CreateCommand())
+        {
+            check.CommandText = "SELECT COUNT(*) FROM Payments WHERE invoice_id = @id";
+            check.Parameters.AddWithValue("@id", invoiceId);
+            var paymentsCount = Convert.ToInt32(await check.ExecuteScalarAsync(cancellationToken));
+            if (paymentsCount > 0)
+            {
+                throw new InvalidOperationException("Cannot delete invoice because it has recorded payments. Please void or refund the payments first.");
+            }
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM Invoices WHERE invoice_id = @invoiceId;";
         command.Parameters.AddWithValue("@invoiceId", invoiceId);

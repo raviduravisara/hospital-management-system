@@ -152,13 +152,30 @@ public sealed class PrescriptionService(MySqlConnectionFactory connectionFactory
     {
         await using var connection = _connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
-        await using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM Prescriptions WHERE prescription_id = @prescriptionId;";
-        command.Parameters.AddWithValue("@prescriptionId", prescriptionId);
+        try
+        {
+            await using var deleteItemsCmd = connection.CreateCommand();
+            deleteItemsCmd.Transaction = transaction;
+            deleteItemsCmd.CommandText = "DELETE FROM Prescription_Items WHERE prescription_id = @prescriptionId;";
+            deleteItemsCmd.Parameters.AddWithValue("@prescriptionId", prescriptionId);
+            await deleteItemsCmd.ExecuteNonQueryAsync(cancellationToken);
 
-        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
-        return affected > 0;
+            await using var command = connection.CreateCommand();
+            command.Transaction = transaction;
+            command.CommandText = "DELETE FROM Prescriptions WHERE prescription_id = @prescriptionId;";
+            command.Parameters.AddWithValue("@prescriptionId", prescriptionId);
+
+            var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return affected > 0;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<PrescriptionResponse?> GetByIdAsync(int prescriptionId, CancellationToken cancellationToken = default)
