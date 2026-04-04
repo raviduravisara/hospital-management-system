@@ -201,6 +201,24 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
+        // Check if patient has relational records
+        await using (var checkCmd = connection.CreateCommand())
+        {
+            checkCmd.CommandText = """
+                SELECT 
+                  (SELECT COUNT(*) FROM Appointments WHERE patient_id = @patientId) +
+                  (SELECT COUNT(*) FROM Prescriptions WHERE patient_id = @patientId) +
+                  (SELECT COUNT(*) FROM Invoices WHERE patient_id = @patientId) +
+                  (SELECT COUNT(*) FROM Lab_Reports WHERE patient_id = @patientId) AS total_links;
+            """;
+            checkCmd.Parameters.AddWithValue("@patientId", patientId);
+            var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync(cancellationToken));
+            if (count > 0)
+            {
+                throw new InvalidOperationException("Cannot delete patient. They have active appointments, prescriptions, lab reports, or invoices.");
+            }
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM Patients WHERE patient_id = @patientId;";
         command.Parameters.AddWithValue("@patientId", patientId);

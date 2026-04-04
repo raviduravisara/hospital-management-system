@@ -217,6 +217,22 @@ public sealed class UserManagementService(MySqlConnectionFactory connectionFacto
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
+        // Prevent orphaned profile data
+        await using (var checkCmd = connection.CreateCommand())
+        {
+            checkCmd.CommandText = """
+                SELECT 
+                  (SELECT COUNT(*) FROM Patients WHERE user_id = @userId) +
+                  (SELECT COUNT(*) FROM Doctors WHERE user_id = @userId) AS total_links;
+            """;
+            checkCmd.Parameters.AddWithValue("@userId", userId);
+            var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync(cancellationToken));
+            if (count > 0)
+            {
+                throw new InvalidOperationException("Cannot delete User. This user account is currently linked to an active Patient or Doctor profile.");
+            }
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM Users WHERE user_id = @userId;";
         command.Parameters.AddWithValue("@userId", userId);
