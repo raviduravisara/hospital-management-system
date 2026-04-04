@@ -438,3 +438,6 @@ build/
 *.pdf
 *.extracted.txt
 .DS_Store
+
+# Development database secrets (Ignored to prevent team conflict)
+backend/HospitalAPI/appsettings.Development.json
