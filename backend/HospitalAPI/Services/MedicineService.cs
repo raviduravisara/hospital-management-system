@@ -212,6 +212,28 @@ public sealed class MedicineService(MySqlConnectionFactory connectionFactory) : 
         await using var connection = connectionFactory.CreateConnection();
         await connection.OpenAsync(cancellationToken);
 
+        // Prevent orphaned billing/prescription data
+        await using (var checkCmd = connection.CreateCommand())
+        {
+            checkCmd.CommandText = """
+                SELECT 
+                  (SELECT COUNT(*) FROM Prescription_Medicines WHERE medicine_id = @medicineId) +
+                  (SELECT COUNT(*) FROM Invoice_Items WHERE item_type = 'Medicine' AND reference_id = @medicineId) AS total_links;
+            """;
+            checkCmd.Parameters.AddWithValue("@medicineId", medicineId);
+            // Ignore error if schema differs, handle gracefully
+            try 
+            {
+                var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync(cancellationToken));
+                if (count > 0)
+                {
+                    throw new InvalidOperationException("Cannot delete Medicine. It is actively linked to past prescriptions or invoices.");
+                }
+            } 
+            catch (InvalidOperationException) { throw; }
+            catch { /* Ignore if Invoice_Items structure differs */ }
+        }
+
         await using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM Medicines WHERE medicine_id = @medicineId;";
         command.Parameters.AddWithValue("@medicineId", medicineId);
