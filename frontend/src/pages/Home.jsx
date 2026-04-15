@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 /* --- Mock Data --- */
 const SERVICES = [
@@ -65,7 +66,7 @@ const SERVICES = [
   },
 ];
 
-const DOCTORS = [
+const FALLBACK_DOCTORS = [
   {
     name: 'Dr. Sarah Mitchell',
     specialty: 'Cardiologist',
@@ -104,7 +105,7 @@ const DOCTORS = [
   },
 ];
 
-const STATS = [
+const FALLBACK_STATS = [
   { value: '50,000+', label: 'Patients Treated' },
   { value: '120+',    label: 'Specialist Doctors' },
   { value: '35+',     label: 'Years of Excellence' },
@@ -162,17 +163,76 @@ function StarRating({ rating }) {
     </div>
   );
 }
+const PUBLIC_API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://hospital-management-api-avaechaue2fdghdk.southeastasia-01.azurewebsites.net';
 
 /* --- Home Page --- */
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [featuredDoctors, setFeaturedDoctors] = useState(FALLBACK_DOCTORS);
+const [stats, setStats] = useState(FALLBACK_STATS);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  useEffect(() => {
+  const loadHomepageData = async () => {
+    try {
+      const doctorsRes = await axios.get(`${PUBLIC_API_BASE}/api/doctors`, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const doctors = Array.isArray(doctorsRes.data) ? doctorsRes.data : [];
+
+      if (doctors.length > 0) {
+        const mappedDoctors = doctors.slice(0, 4).map((doctor, index) => {
+          const firstName = doctor.firstName || '';
+          const lastName = doctor.lastName || '';
+          const fullName = `${firstName} ${lastName}`.trim() || 'Doctor';
+          const initials =
+            `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || 'DR';
+
+          const colors = [
+            'bg-pink-500',
+            'bg-purple-500',
+            'bg-yellow-500',
+            'bg-blue-500',
+          ];
+
+          return {
+            name: `Dr. ${fullName}`,
+            specialty: doctor.specialization || 'Specialist',
+            experience: doctor.experience ? `${doctor.experience} years` : 'Experienced',
+            rating: doctor.rating || 4.8,
+            patients: 'Active',
+            initials,
+            color: colors[index % colors.length],
+          };
+        });
+
+        setFeaturedDoctors(mappedDoctors);
+
+        setStats([
+          { value: `${doctors.length}+`, label: 'Specialist Doctors' },
+          { value: '24/7', label: 'Hospital Support' },
+          { value: 'Modern', label: 'Digital Care Platform' },
+          { value: 'Trusted', label: 'Patient Care Services' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Homepage live data load failed:', error);
+      setFeaturedDoctors(FALLBACK_DOCTORS);
+      setStats(FALLBACK_STATS);
+    }
+  };
+
+  loadHomepageData();
+}, []);
+
 
   const scrollTo = (id) => {
     setMobileMenuOpen(false);
@@ -320,7 +380,7 @@ export default function Home() {
       {/* Stats */}
       <section className="bg-blue-600 py-14">
         <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {STATS.map(({ value, label }) => (
+          {stats.map(({ value, label }) => (
             <div key={label}>
               <p className="text-3xl sm:text-4xl font-extrabold text-white mb-1">{value}</p>
               <p className="text-sm font-medium text-blue-100">{label}</p>
@@ -365,7 +425,7 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {DOCTORS.map(({ name, specialty, experience, rating, patients, initials, color }) => (
+            {featuredDoctors.map(({ name, specialty, experience, rating, patients, initials, color }) => (
               <div key={name}
                 className="rounded-2xl border border-gray-100 bg-white p-6 hover:shadow-xl transition-shadow flex flex-col items-center text-center gap-3">
                 <div className={`w-16 h-16 rounded-full ${color} flex items-center justify-center text-white text-xl font-extrabold shadow-md`}>
