@@ -16,6 +16,7 @@ export default function Users() {
   const role = extractRoleFromToken(token);
 
   const [users, setUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState('Doctor');//sutha
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -73,6 +74,10 @@ export default function Users() {
   }
 
   const activeCount = useMemo(() => users.filter((user) => user.isActive).length, [users]);
+  const tabUsers = useMemo(() => {
+  return users.filter((user) => user.role === activeTab);
+}, [users, activeTab]);
+
 
   const resetForm = () => {
     setEditingId(null);
@@ -247,7 +252,24 @@ export default function Users() {
                 </button>
               </form>
             </div>
-
+<div className="border-b border-slate-100 px-4 pt-4">
+  <div className="flex flex-wrap gap-2">
+    {['Doctor', 'Patient', 'Admin'].map((tab) => (
+      <button
+        key={tab}
+        type="button"
+        onClick={() => setActiveTab(tab)}
+        className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+          activeTab === tab
+            ? 'bg-slate-900 text-white'
+            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+        }`}
+      >
+        {tab}s
+      </button>
+    ))}
+  </div>
+</div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[820px] text-sm">
                 <thead className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -265,12 +287,13 @@ export default function Users() {
                       <td colSpan={5} className="px-4 py-6 text-center text-slate-500">Loading users...</td>
                     </tr>
                   )}
-                  {!isLoading && users.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-slate-500">No users found.</td>
-                    </tr>
-                  )}
-                  {users.map((user) => (
+                  {!isLoading && tabUsers.length === 0 && (
+  <tr>
+    <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+      No {activeTab.toLowerCase()}s found.
+    </td>
+  </tr>
+)}{tabUsers.map((user) => (
                     <tr key={user.userId} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <p className="font-semibold text-slate-800">{user.username}</p>
