@@ -275,8 +275,7 @@ export default function PatientDashboard() {
                             )}
                         </div>
 
-                        <div className="glass-card rounded-2xl p-5">
-                            <h3 className="text-base font-bold text-gray-900">Quick Actions</h3>
+                    
 
                             <div className="mt-4 grid grid-cols-1 gap-3">
                                 <Link
@@ -301,7 +300,7 @@ export default function PatientDashboard() {
                                 </button>
 
                     
-                            </div>
+                        
                         </div>
                     </div>
 
