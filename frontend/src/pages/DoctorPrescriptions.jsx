@@ -239,14 +239,15 @@ export default function DoctorPrescriptions() {
                 <label className="space-y-2 text-sm text-gray-700">
                   Patient ID
                   <input
-                    name="patientId"
-                    type="number"
-                    value={form.patientId}
-                    onChange={handleFormChange}
-                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none"
-                    placeholder="Patient ID"
-                    disabled={Boolean(form.appointmentId)}
-                  />
+  name="patientId"
+  type="number"
+  min="1"
+  value={form.patientId}
+  onChange={handleFormChange}
+  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none"
+  placeholder="Patient ID"
+  disabled={Boolean(form.appointmentId)}
+/>
                   {form.appointmentId && (
                     <p className="text-xs text-gray-500">Patient ID is auto-filled from the selected appointment.</p>
                   )}
@@ -269,14 +270,15 @@ export default function DoctorPrescriptions() {
                       ))}
                     </select>
                   ) : (
-                    <input
-                      name="appointmentId"
-                      type="number"
-                      value={form.appointmentId}
-                      onChange={handleFormChange}
-                      className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none"
-                      placeholder="Appointment ID"
-                    />
+                   <input
+  name="appointmentId"
+  type="number"
+  min="1"
+  value={form.appointmentId}
+  onChange={handleFormChange}
+  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none"
+  placeholder="Appointment ID"
+/>
                   )}
                   {appointments.length === 0 ? (
                     <p className="text-xs text-gray-500">No appointments available for auto-selection.</p>
