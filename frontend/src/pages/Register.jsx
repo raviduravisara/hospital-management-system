@@ -7,11 +7,7 @@ import axiosInstance from '../api/axios';
 
 
 /* Role options */
-const ROLE_OPTIONS = [
-    { value: '', label: '-- Select Role --' },
-    { value: 'Doctor', label: 'Doctor' },
-    { value: 'Patient', label: 'Patient' },
-];
+
 
 /* Register Page */
 export default function Register() {
@@ -28,7 +24,8 @@ export default function Register() {
 
     const onSubmit = async (data) => {
         try {
-            const { confirmPassword, ...payload } = data;
+          const { confirmPassword, role, ...rest } = data;
+const payload = { ...rest, role: 'Patient' };
             await axiosInstance.post('/api/auth/register', payload);
             navigate('/login');
         } catch (err) {
@@ -92,7 +89,7 @@ export default function Register() {
                                     id="email"
                                     label="Email Address"
                                     type="email"
-                                    placeholder="doctor@hospital.com"
+                                    placeholder="patient@example.com"
                                     error={errors.email}
                                     registration={register('email', {
                                         required: 'Email address is required',
@@ -103,23 +100,7 @@ export default function Register() {
                                     })}
                                 />
 
-                                <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="role" className="text-sm font-medium text-gray-700">Role</label>
-                                    <select
-                                        id="role"
-                                        className={`w-full px-4 py-2.5 bg-gray-100 text-gray-900 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:border-transparent appearance-none cursor-pointer ${
-                                            errors.role ? 'border-red-400 focus:ring-red-400' : 'border-transparent focus:ring-blue-500'
-                                        }`}
-                                        {...register('role', { required: 'Please select a role' })}
-                                    >
-                                        {ROLE_OPTIONS.map(({ value, label }) => (
-                                            <option key={value} value={value} disabled={value === ''}>{label}</option>
-                                        ))}
-                                    </select>
-                                    {errors.role && (
-                                        <span role="alert" className="text-xs text-red-500 font-medium mt-0.5">{errors.role.message}</span>
-                                    )}
-                                </div>
+                               
 
                                 <FormInput
                                     id="password"
