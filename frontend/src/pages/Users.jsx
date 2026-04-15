@@ -291,9 +291,7 @@ export default function Users() {
                           <button type="button" onClick={() => toggleStatus(user)} className="rounded-md border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-100">
                             {user.isActive ? 'Deactivate' : 'Activate'}
                           </button>
-                          <button type="button" onClick={() => handleDelete(user.userId)} className="rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100">
-                            Delete
-                          </button>
+                         
                         </div>
                       </td>
                     </tr>
