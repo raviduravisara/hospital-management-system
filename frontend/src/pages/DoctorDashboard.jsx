@@ -707,7 +707,7 @@ export default function DoctorDashboard() {
     schedule: () => navigate('/doctor/schedule'),
     appointments: () => navigate('/doctor/appointments'),
     patients: () => scrollToSection(patientsRef),
-    records: () => navigate('/doctor/prescriptions'),
+    records: () => navigate('/doctor/patient-records'),
     prescriptions: () => navigate('/doctor/prescriptions'),
     'lab-request': () => openLabRequestModal(),
     'lab-reports': () => scrollToSection(labReportsRef),
@@ -733,7 +733,7 @@ export default function DoctorDashboard() {
       'Write Prescription': () => navigate('/doctor/prescriptions'),
       'Request Lab Test': openLabRequestModal,
       'Add Clinical Note': () => navigate('/doctor/consultation-notes'),
-      'View Patient Records': () => navigate('/doctor/prescriptions'),
+      'View Patient Records': () => navigate('/doctor/patient-records'),
       'Mark Availability': () => navigate('/doctor/schedule'),
       'Appointment History': () => navigate('/doctor/appointments'),
       'View Lab Reports': () => scrollToSection(labReportsRef),
@@ -925,13 +925,7 @@ export default function DoctorDashboard() {
                   <h2 className="text-lg font-bold text-gray-900">Professional Profile</h2>
                   <p className="text-sm text-gray-500 mt-1">Your registered doctor profile details.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={openEditModal}
-                  className="inline-flex items-center justify-center rounded-2xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
-                >
-                  Edit profile
-                </button>
+               
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -1142,36 +1136,9 @@ export default function DoctorDashboard() {
           </div>
 
           {/* ── Quick Actions ───────────────────────────── */}
-          <div ref={quickActionsRef} className="glass-card rounded-2xl p-5">
-            <h2 className="text-sm font-bold text-gray-800 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Write Prescription',   icon: 'document',  color: 'teal'   },
-                { label: 'Request Lab Test',      icon: 'flask',     color: 'amber'  },
-                { label: 'Add Clinical Note',     icon: 'edit',      color: 'indigo' },
-                { label: 'View Patient Records',  icon: 'folder',    color: 'blue'   },
-                { label: 'Mark Availability',     icon: 'clock',     color: 'green'  },
-                { label: 'Appointment History',   icon: 'clipboard', color: 'violet' },
-                { label: 'View Lab Reports',      icon: 'chart',     color: 'teal'   },
-                { label: 'My Profile Settings',   icon: 'user',      color: 'indigo' },
-              ].map(({ label, icon, color }) => {
-                const c = COLOR_MAP[color];
-
-                return (
-                  <button
-                    key={label}
-                    onClick={() => handleQuickAction(label)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-semibold ${c.bg} hover:shadow-sm active:scale-95 transition-all ring-1 ${c.ring}`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg ${c.icon} flex items-center justify-center shrink-0`}>
-                      <Icon name={icon} className="w-4 h-4" />
-                    </div>
-                    <span className="text-gray-700 leading-tight">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          
+            
+           
 
         </main>
       </div>

@@ -11,6 +11,7 @@ import DoctorScheduleSetup from './pages/DoctorScheduleSetup';
 import DoctorWeeklySchedule from './pages/DoctorWeeklySchedule';
 import DoctorAppointments from './pages/DoctorAppointments';
 import DoctorConsultationNotes from './pages/DoctorConsultationNotes';
+import DoctorPatientRecords from './pages/DoctorPatientRecords';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAppointments from './pages/AdminAppointments';
 import Medicines from './pages/Medicines';
@@ -49,6 +50,7 @@ function App() {
           <Route path="doctor/schedule/weekly" element={<DoctorWeeklySchedule />} />
           <Route path="doctor/appointments" element={<DoctorAppointments />} />
           <Route path="doctor/consultation-notes" element={<DoctorConsultationNotes />} />
+          <Route path="doctor/patient-records" element={<DoctorPatientRecords />} />
           <Route path="patient/dashboard" element={<PatientDashboard />} />
           <Route path="patient/register" element={<PatientRegistration />} />
           <Route path="patient/profile" element={<PatientProfile />} />

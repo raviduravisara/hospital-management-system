@@ -275,36 +275,9 @@ export default function PatientDashboard() {
                             )}
                         </div>
 
-                        <div className="glass-card rounded-2xl p-5">
-                            <h3 className="text-base font-bold text-gray-900">Quick Actions</h3>
+                    
 
-                            <div className="mt-4 grid grid-cols-1 gap-3">
-                                <Link
-                                    to={profile ? '/patient/profile' : '/patient/register'}
-                                    className="px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 text-center"
-                                >
-                                    {profile ? 'Edit My Profile' : 'Create My Profile'}
-                                </Link>
-
-                                <button
-                                    onClick={() => navigate('/patient/appointments')}
-                                    className="px-4 py-2.5 rounded-lg border border-blue-300 text-blue-700 text-sm font-semibold hover:bg-blue-50"
-                                >
-                                    Book Appointment
-                                </button>
-
-                                <button
-                                    onClick={() => navigate('/patient/dashboard')}
-                                    className="px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-100"
-                                >
-                                    Refresh Dashboard
-                                </button>
-
-                                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                                    Appointment booking is now available. Prescription, lab and billing pages can be linked next.
-                                </div>
-                            </div>
-                        </div>
+                            
                     </div>
 
                     {(activeSection === 'overview' || activeSection === 'prescriptions' || activeSection === 'lab' || activeSection === 'billing') && (
