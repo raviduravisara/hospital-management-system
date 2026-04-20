@@ -39,8 +39,9 @@ export default function DoctorScheduleSetup() {
           return;
         }
 
+        const existingData = response.data ?? [];
         const byDay = new Map(
-          (response.data ?? []).map((item) => [
+          existingData.map((item) => [
             item.dayOfWeek,
             {
               dayOfWeek: item.dayOfWeek,
@@ -53,7 +54,11 @@ export default function DoctorScheduleSetup() {
           ])
         );
 
-        setRows(defaultRows.map((row) => byDay.get(row.dayOfWeek) ?? row));
+        if (existingData.length > 0) {
+          setRows(defaultRows.map((row) => byDay.get(row.dayOfWeek) ?? { ...row, isAvailable: false }));
+        } else {
+          setRows(defaultRows);
+        }
       } catch (requestError) {
         if (requestError.response?.status === 404) {
           setDoctorProfileMissing(true);

@@ -117,9 +117,16 @@ export default function PatientPrescriptions() {
                           <p className="text-sm text-gray-500">Prescription #{prescription.prescriptionId}</p>
                           <h3 className="text-lg font-semibold text-gray-900">{prescription.diagnosis || 'Prescription details'}</h3>
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 text-right">
                           <p>Date: {prescription.prescriptionDate}</p>
-                          <p>Doctor: {prescription.doctorName || 'Unknown'}</p>
+                          <p className="flex items-center justify-end gap-2 mt-0.5" title={prescription.doctorFormattedId}>
+                            <span>Doctor: {prescription.doctorName || 'Unknown'}</span>
+                            {prescription.doctorFormattedId && (
+                              <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                                {prescription.doctorFormattedId}
+                              </span>
+                            )}
+                          </p>
                         </div>
                       </div>
 

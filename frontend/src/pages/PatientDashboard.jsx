@@ -178,9 +178,16 @@ export default function PatientDashboard() {
                 <section className="xl:col-span-9">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Patient Dashboard</h1>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Your appointments, prescriptions, labs and billing overview.
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                                {profile ? `Welcome Back, ${profile.firstName}!` : 'Patient Dashboard'}
+                            </h1>
+                            <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                                {profile?.formattedId && (
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold font-mono">
+                                        {profile.formattedId}
+                                    </span>
+                                )}
+                                <span>Here is an overview of your health statistics.</span>
                             </p>
                         </div>
 
@@ -280,125 +287,7 @@ export default function PatientDashboard() {
                             
                     </div>
 
-                    {(activeSection === 'overview' || activeSection === 'prescriptions' || activeSection === 'lab' || activeSection === 'billing') && (
-                        <>
-                            <Panel title="Upcoming Appointments" className="mt-5">
-                                <div className="flex items-center justify-between gap-3 mb-3">
-                                    <p className="text-sm text-gray-500">
-                                        Manage your bookings from the appointments page.
-                                    </p>
-                                    <button
-                                        onClick={() => navigate('/patient/appointments')}
-                                        className="rounded-lg border border-blue-300 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                                    >
-                                        Open Appointments
-                                    </button>
-                                </div>
 
-                                {details?.upcomingAppointments?.length ? (
-                                    <ul className="divide-y divide-gray-100">
-                                        {details.upcomingAppointments.map((item) => (
-                                            <li key={item.appointmentId} className="py-3 text-sm">
-                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
-                                                    <p className="font-semibold text-gray-900">
-                                                        {item.appointmentDate} at {item.appointmentTime}
-                                                    </p>
-                                                    <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 w-fit">
-                                                        {item.status}
-                                                    </span>
-                                                </div>
-                                                <p className="text-gray-600 mt-1">
-                                                    Doctor: {item.doctorName || 'Not assigned'}
-                                                    {item.reason ? ` • Reason: ${item.reason}` : ''}
-                                                </p>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <EmptyText text="No upcoming appointments." />
-                                )}
-                            </Panel>
-
-                            {(activeSection === 'prescriptions' || activeSection === 'overview') && (
-                                <Panel title="Recent Prescriptions" className="mt-5">
-                                    {details?.recentPrescriptions?.length ? (
-                                        <ul className="divide-y divide-gray-100">
-                                            {details.recentPrescriptions.map((item) => (
-                                                <li key={item.prescriptionId} className="py-3 text-sm">
-                                                    <p className="font-semibold text-gray-900">
-                                                        Prescription #{item.prescriptionId}
-                                                    </p>
-                                                    <p className="text-gray-600 mt-1">
-                                                        Date: {item.prescriptionDate} • Doctor:{' '}
-                                                        {item.doctorName || 'Not assigned'}
-                                                    </p>
-                                                    <p className="text-gray-600 mt-1">
-                                                        Diagnosis: {item.diagnosis || 'N/A'}
-                                                    </p>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <EmptyText text="No prescriptions found." />
-                                    )}
-                                </Panel>
-                            )}
-
-                            {(activeSection === 'lab' || activeSection === 'overview') && (
-                                <Panel title="Recent Lab Reports" className="mt-5">
-                                    {details?.recentLabReports?.length ? (
-                                        <ul className="divide-y divide-gray-100">
-                                            {details.recentLabReports.map((item) => (
-                                                <li key={item.reportId} className="py-3 text-sm">
-                                                    <p className="font-semibold text-gray-900">{item.testName}</p>
-                                                    <p className="text-gray-600 mt-1">
-                                                        Date: {item.testDate} • Doctor:{' '}
-                                                        {item.doctorName || 'Not assigned'}
-                                                    </p>
-                                                    <p className="text-gray-600 mt-1">
-                                                        Summary:{' '}
-                                                        {item.resultSummary || 'Pending result summary'}
-                                                    </p>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <EmptyText text="No lab reports found." />
-                                    )}
-                                </Panel>
-                            )}
-
-                            {(activeSection === 'billing' || activeSection === 'overview') && (
-                                <Panel title="Pending Invoices" className="mt-5">
-                                    {details?.pendingInvoices?.length ? (
-                                        <ul className="divide-y divide-gray-100">
-                                            {details.pendingInvoices.map((item) => (
-                                                <li key={item.invoiceId} className="py-3 text-sm">
-                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
-                                                        <p className="font-semibold text-gray-900">
-                                                            Invoice #{item.invoiceId}
-                                                        </p>
-                                                        <span className="text-xs px-2 py-1 rounded bg-amber-50 text-amber-700 w-fit">
-                                                            {item.status}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-gray-600 mt-1">
-                                                        Date: {item.invoiceDate}
-                                                    </p>
-                                                    <p className="text-gray-600 mt-1">
-                                                        Total: LKR {Number(item.totalAmount).toLocaleString()} • Paid:
-                                                        LKR {Number(item.paidAmount).toLocaleString()}
-                                                    </p>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <EmptyText text="No pending invoices found." />
-                                    )}
-                                </Panel>
-                            )}
-                        </>
-                    )}
                 </section>
             </div>
         </div>

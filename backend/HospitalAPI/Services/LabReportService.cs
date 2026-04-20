@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Text.Json;
 using HospitalAPI.Data;
 using HospitalAPI.Models;
 using Microsoft.AspNetCore.Hosting;
@@ -40,14 +42,12 @@ public interface ILabReportService
 public sealed class LabReportService : ILabReportService
 {
     private readonly MySqlConnectionFactory connectionFactory;
-    private readonly string uploadsDirectory;
-    private readonly FileExtensionContentTypeProvider contentTypeProvider = new();
+    private readonly IConfiguration configuration;
 
-    public LabReportService(MySqlConnectionFactory connectionFactory, IWebHostEnvironment environment)
+    public LabReportService(MySqlConnectionFactory connectionFactory, IConfiguration configuration)
     {
         this.connectionFactory = connectionFactory;
-        uploadsDirectory = Path.Combine(environment.ContentRootPath, "UploadedLabReports");
-        Directory.CreateDirectory(uploadsDirectory);
+        this.configuration = configuration;
     }
 
     public async Task<LabReportOperationResult> CreateAsync(
@@ -119,6 +119,7 @@ public sealed class LabReportService : ILabReportService
                 lr.test_date,
                 lr.result_summary,
                 lr.file_path,
+                lr.doctor_id,
                 CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name,
                 lr.created_at
             FROM Lab_Reports lr
@@ -133,14 +134,20 @@ public sealed class LabReportService : ILabReportService
         while (await reader.ReadAsync(cancellationToken))
         {
             var filePath = GetNullableString(reader, "file_path");
+            var doctorIdOrd = reader.GetOrdinal("doctor_id");
+            var doctorId = reader.IsDBNull(doctorIdOrd) ? (int?)null : reader.GetInt32(doctorIdOrd);
             items.Add(new PatientLabReportListResponse(
                 ReportId: reader.GetInt32(reader.GetOrdinal("report_id")),
+                PatientId: patientId,
+                PatientFormattedId: $"PAT-{patientId:D4}",
                 TestName: reader.GetString(reader.GetOrdinal("test_name")),
                 TestDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("test_date"))),
                 ResultSummary: GetNullableString(reader, "result_summary"),
                 HasFile: !string.IsNullOrWhiteSpace(filePath),
-                FileName: string.IsNullOrWhiteSpace(filePath) ? null : Path.GetFileName(filePath),
+                FileName: string.IsNullOrWhiteSpace(filePath) ? null : Path.GetFileName(new Uri(filePath).AbsolutePath),
+                FileUrl: filePath,
                 DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name")),
+                DoctorFormattedId: doctorId.HasValue ? $"DOC-{doctorId.Value:D4}" : null,
                 CreatedAt: reader.GetDateTime(reader.GetOrdinal("created_at"))));
         }
 
@@ -180,16 +187,21 @@ public sealed class LabReportService : ILabReportService
         }
 
         var filePath = GetNullableString(reader, "file_path");
+        var pId = reader.GetInt32(reader.GetOrdinal("patient_id"));
+        var dId = reader.IsDBNull(reader.GetOrdinal("doctor_id")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("doctor_id"));
         return new PatientLabReportDetailResponse(
             ReportId: reader.GetInt32(reader.GetOrdinal("report_id")),
-            PatientId: reader.GetInt32(reader.GetOrdinal("patient_id")),
-            DoctorId: reader.IsDBNull(reader.GetOrdinal("doctor_id")) ? null : reader.GetInt32(reader.GetOrdinal("doctor_id")),
+            PatientId: pId,
+            PatientFormattedId: $"PAT-{pId:D4}",
+            DoctorId: dId,
             TestName: reader.GetString(reader.GetOrdinal("test_name")),
             TestDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("test_date"))),
             ResultSummary: GetNullableString(reader, "result_summary"),
             HasFile: !string.IsNullOrWhiteSpace(filePath),
-            FileName: string.IsNullOrWhiteSpace(filePath) ? null : Path.GetFileName(filePath),
+            FileName: string.IsNullOrWhiteSpace(filePath) ? null : Path.GetFileName(new Uri(filePath).AbsolutePath),
+            FileUrl: filePath,
             DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name")),
+            DoctorFormattedId: dId.HasValue ? $"DOC-{dId.Value:D4}" : null,
             CreatedAt: reader.GetDateTime(reader.GetOrdinal("created_at")),
             UpdatedAt: reader.GetDateTime(reader.GetOrdinal("updated_at")));
     }
@@ -216,17 +228,7 @@ public sealed class LabReportService : ILabReportService
             return null;
         }
 
-        var fullPath = Path.Combine(uploadsDirectory, Path.GetFileName(filePath));
-        if (!File.Exists(fullPath))
-        {
-            return null;
-        }
-
-        var contentType = contentTypeProvider.TryGetContentType(fullPath, out var providerContentType)
-            ? providerContentType
-            : "application/octet-stream";
-
-        return (Path.GetFileName(fullPath), contentType, fullPath);
+        return ("cloud_file", "application/octet-stream", filePath);
     }
 
     public async Task<LabReportOperationResult> UpdateAsync(
@@ -365,18 +367,31 @@ public sealed class LabReportService : ILabReportService
             return null;
         }
 
-        var safeFileName = Path.GetFileName(reportFile.FileName);
-        if (string.IsNullOrWhiteSpace(safeFileName))
+        var ext = Path.GetExtension(reportFile.FileName);
+        var publicId = $"hospital/lab_reports/{Guid.NewGuid():N}{ext}";
+        var cloudName = configuration["Cloudinary:CloudName"]!;
+        var uploadPreset = configuration["Cloudinary:UploadPreset"]!;
+
+        await using var stream = reportFile.OpenReadStream();
+        using var httpClient = new HttpClient();
+        using var multipart = new MultipartFormDataContent();
+        var fileContent = new StreamContent(stream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(reportFile.ContentType);
+        multipart.Add(fileContent, "file", reportFile.FileName);
+        multipart.Add(new StringContent(uploadPreset), "upload_preset");
+        multipart.Add(new StringContent(publicId), "public_id");
+
+        var response = await httpClient.PostAsync(
+            $"https://api.cloudinary.com/v1_1/{cloudName}/raw/upload", multipart, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
         {
-            safeFileName = "lab-report";
+            var error = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"Cloudinary upload failed: {error}");
         }
 
-        var storedFileName = $"{Guid.NewGuid():N}_{safeFileName}";
-        var absolutePath = Path.Combine(uploadsDirectory, storedFileName);
-
-        await using var stream = File.Create(absolutePath);
-        await reportFile.CopyToAsync(stream, cancellationToken);
-        return storedFileName;
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+        return json.GetProperty("secure_url").GetString();
     }
 
     private async Task<(bool Exists, string? FilePath)> GetReportFileInfoAsync(MySqlConnection connection, int reportId, int patientId, CancellationToken cancellationToken)
@@ -402,15 +417,9 @@ public sealed class LabReportService : ILabReportService
         return (true, filePath);
     }
 
-    private void DeletePhysicalFile(string storedFileName)
+    private void DeletePhysicalFile(string filePath)
     {
-        var safeName = Path.GetFileName(storedFileName);
-        var fullPath = Path.Combine(uploadsDirectory, safeName);
-
-        if (File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-        }
+        // Optional: Implement Cloudinary deletion if necessary.
     }
 
     private static string? GetNullableString(MySqlDataReader reader, string columnName)

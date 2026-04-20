@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Select from 'react-select';
 import { Navigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import { extractRoleFromToken } from '../utils/auth';
@@ -62,31 +63,45 @@ export default function DoctorPatientRecords() {
 
     appointments.forEach((item) => {
       if (!map.has(String(item.patientId))) {
-        map.set(String(item.patientId), item.patientName || `Patient #${item.patientId}`);
+        map.set(String(item.patientId), {
+          name: item.patientName || `Patient #${item.patientId}`,
+          formattedId: item.patientFormattedId || `PAT-${String(item.patientId).padStart(4, '0')}`
+        });
       }
     });
 
     prescriptions.forEach((item) => {
       if (!map.has(String(item.patientId))) {
-        map.set(String(item.patientId), item.patientName || `Patient #${item.patientId}`);
+        map.set(String(item.patientId), {
+          name: item.patientName || `Patient #${item.patientId}`,
+          formattedId: item.patientFormattedId || `PAT-${String(item.patientId).padStart(4, '0')}`
+        });
       }
     });
 
     notes.forEach((item) => {
       if (!map.has(String(item.patientId))) {
-        map.set(String(item.patientId), item.patientName || `Patient #${item.patientId}`);
+        map.set(String(item.patientId), {
+          name: item.patientName || `Patient #${item.patientId}`,
+          formattedId: item.patientFormattedId || `PAT-${String(item.patientId).padStart(4, '0')}`
+        });
       }
     });
 
     labRequests.forEach((item) => {
       if (!map.has(String(item.patientId))) {
-        map.set(String(item.patientId), item.patientName || `Patient #${item.patientId}`);
+        map.set(String(item.patientId), {
+          name: item.patientName || `Patient #${item.patientId}`,
+          formattedId: item.patientFormattedId || `PAT-${String(item.patientId).padStart(4, '0')}`
+        });
       }
     });
 
     return Array.from(map.entries())
-      .map(([patientId, patientName]) => ({ patientId, patientName }))
-      .sort((a, b) => a.patientName.localeCompare(b.patientName));
+      .map(([patientId, data]) => {
+        return { value: patientId, label: `${data.formattedId} - ${data.name}` };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [appointments, prescriptions, notes, labRequests]);
 
   const filteredAppointments = useMemo(() => {
@@ -150,19 +165,24 @@ export default function DoctorPatientRecords() {
             </div>
 
             <div>
-              <label className="text-xs uppercase tracking-wide text-gray-500">Filter by Patient</label>
-              <select
-                value={selectedPatientId}
-                onChange={(e) => setSelectedPatientId(e.target.value)}
-                className="mt-2 w-full rounded-lg glass-input px-3 py-2 text-sm"
-              >
-                <option value="">All patients</option>
-                {patientOptions.map((option) => (
-                  <option key={option.patientId} value={option.patientId}>
-                    {option.patientName}
-                  </option>
-                ))}
-              </select>
+              <label className="text-xs uppercase tracking-wide text-gray-500 block mb-2">Filter by Patient</label>
+              <Select
+                options={patientOptions}
+                value={patientOptions.find((opt) => opt.value === selectedPatientId) || null}
+                onChange={(selected) => setSelectedPatientId(selected ? selected.value : '')}
+                placeholder="All patients"
+                isClearable
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderRadius: '0.5rem',
+                    borderColor: '#E5E7EB',
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    padding: '2px',
+                    fontSize: '0.875rem',
+                  }),
+                }}
+              />
             </div>
           </div>
         </section>
@@ -181,9 +201,16 @@ export default function DoctorPatientRecords() {
                 ) : (
                   filteredAppointments.map((item) => (
                     <div key={item.appointmentId} className="rounded-xl border border-gray-200 bg-white/70 p-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {item.patientName || `Patient #${item.patientId}`}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1" title={item.patientFormattedId}>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {item.patientName || `Patient #${item.patientId}`}
+                        </p>
+                        {item.patientFormattedId && (
+                          <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                            {item.patientFormattedId}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-sm text-gray-600">
                         Appointment #{item.appointmentId} • {item.appointmentDate} •{' '}
                         {String(item.appointmentTime || '').slice(0, 5)}
@@ -204,9 +231,16 @@ export default function DoctorPatientRecords() {
                 ) : (
                   filteredPrescriptions.map((item) => (
                     <div key={item.prescriptionId} className="rounded-xl border border-gray-200 bg-white/70 p-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {item.patientName || `Patient #${item.patientId}`}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1" title={item.patientFormattedId}>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {item.patientName || `Patient #${item.patientId}`}
+                        </p>
+                        {item.patientFormattedId && (
+                          <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                            {item.patientFormattedId}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-sm text-gray-600">
                         Prescription #{item.prescriptionId} • {item.prescriptionDate}
                       </p>
@@ -226,9 +260,16 @@ export default function DoctorPatientRecords() {
                 ) : (
                   filteredNotes.map((item) => (
                     <div key={item.noteId} className="rounded-xl border border-gray-200 bg-white/70 p-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {item.patientName || `Patient #${item.patientId}`}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1" title={item.patientFormattedId}>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {item.patientName || `Patient #${item.patientId}`}
+                        </p>
+                        {item.patientFormattedId && (
+                          <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                            {item.patientFormattedId}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-sm text-gray-600">Date: {item.consultationDate}</p>
                       <p className="mt-1 text-sm text-gray-600">
                         Chief Complaint: {item.chiefComplaint || 'N/A'}
@@ -251,9 +292,16 @@ export default function DoctorPatientRecords() {
                 ) : (
                   filteredLabRequests.map((item) => (
                     <div key={item.requestId} className="rounded-xl border border-gray-200 bg-white/70 p-4">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {item.patientName || `Patient #${item.patientId}`}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1" title={item.patientFormattedId}>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {item.patientName || `Patient #${item.patientId}`}
+                        </p>
+                        {item.patientFormattedId && (
+                          <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                            {item.patientFormattedId}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-sm text-gray-600">
                         {item.testName || 'Lab Test'} • {item.priority || 'Routine'}
                       </p>

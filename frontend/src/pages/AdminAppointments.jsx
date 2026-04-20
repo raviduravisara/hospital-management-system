@@ -329,8 +329,26 @@ export default function AdminAppointments() {
                 <tbody>
                   {filteredAppointments.map((item) => (
                     <tr key={item.appointmentId} className="border-b border-gray-50">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{item.patientName}</td>
-                      <td className="py-2 pr-4 text-gray-700">{item.doctorName}</td>
+                      <td className="py-2 pr-4 font-medium text-gray-900">
+                        <div className="flex items-center gap-2" title={item.patientFormattedId}>
+                          <span>{item.patientName}</span>
+                          {item.patientFormattedId && (
+                            <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                              {item.patientFormattedId}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-2 pr-4 text-gray-700">
+                        <div className="flex items-center gap-2" title={item.doctorFormattedId}>
+                          <span>{item.doctorName}</span>
+                          {item.doctorFormattedId && (
+                            <span className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter bg-teal-50 px-1.5 py-0.5 rounded">
+                              {item.doctorFormattedId}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-2 pr-4 text-gray-700">{item.appointmentDate}</td>
                       <td className="py-2 pr-4 text-gray-700">{formatTimeLabel(item.appointmentTime)}</td>
                       <td className="py-2 pr-4">

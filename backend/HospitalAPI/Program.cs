@@ -1,5 +1,7 @@
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using HospitalAPI.Data;
 using HospitalAPI.Models;
 using HospitalAPI.Security;
@@ -122,6 +124,14 @@ builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<ILabReportService, LabReportService>();
 builder.Services.AddScoped<ILabRequestService, LabRequestService>();
 builder.Services.AddScoped<IConsultationNoteService, ConsultationNoteService>();
+
+
+var cloudinaryAccount = new CloudinaryDotNet.Account(
+    builder.Configuration["Cloudinary:CloudName"],
+    builder.Configuration["Cloudinary:ApiKey"],
+    builder.Configuration["Cloudinary:ApiSecret"]
+);
+builder.Services.AddSingleton(new CloudinaryDotNet.Cloudinary(cloudinaryAccount));
 
 var app = builder.Build();
 
@@ -409,22 +419,14 @@ app.MapGet("/api/patients/me/lab-reports/{reportId:int}/download", async (
     }
 
     var patient = await patientService.GetByUserIdAsync(currentUserId.Value, cancellationToken);
-    if (patient is null)
-    {
-        return Results.NotFound();
-    }
+    if (patient is null) return Results.NotFound();
 
     var downloadInfo = await labReportService.GetFileDownloadInfoAsync(reportId, patient.PatientId, cancellationToken);
-    if (downloadInfo is null)
-    {
-        return Results.NotFound();
-    }
+    if (downloadInfo is null) return Results.NotFound();
 
-    var (fileName, contentType, fullPath) = downloadInfo.Value;
-    var fileStream = File.OpenRead(fullPath);
-    return Results.File(fileStream, contentType, fileName);
+    var (_, _, cloudinaryUrl) = downloadInfo.Value;
+    return Results.Redirect(cloudinaryUrl);
 }).RequireAuthorization(policy => policy.RequireRole("Patient"));
-
 app.MapPost("/api/patients/me/lab-reports", async (
     HttpRequest request,
     ClaimsPrincipal user,
@@ -617,6 +619,28 @@ app.MapGet("/api/lab-requests/me", async (
     return Results.Ok(requests);
 }).RequireAuthorization(policy => policy.RequireRole("Doctor"));
 
+app.MapGet("/api/lab-requests/patient/me", async (
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    ILabRequestService labRequestService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var patientProfile = await patientService.GetByUserIdAsync(currentUserId.Value, cancellationToken);
+    if (patientProfile is null)
+    {
+        return Results.NotFound(new { message = "Patient profile not found." });
+    }
+
+    var requests = await labRequestService.GetByPatientIdAsync(patientProfile.PatientId, cancellationToken);
+    return Results.Ok(requests);
+}).RequireAuthorization(policy => policy.RequireRole("Patient"));
+
 app.MapGet("/api/lab-requests", async (
     string? status,
     ILabRequestService labRequestService,
@@ -661,6 +685,35 @@ app.MapPut("/api/lab-requests/{requestId:int}/status", async (
         ? Results.Ok(result.Request)
         : Results.BadRequest(new { message = result.Message });
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Doctor"));
+
+app.MapPost("/api/lab-requests/{requestId:int}/upload-report", async (
+    int requestId,
+    LabReportUrlRequest urlRequest,
+    ClaimsPrincipal user,
+    IPatientService patientService,
+    ILabRequestService labRequestService,
+    CancellationToken cancellationToken) =>
+{
+    var currentUserId = GetCurrentUserId(user);
+    if (currentUserId is null) return Results.Unauthorized();
+
+    var patientProfile = await patientService.GetByUserIdAsync(currentUserId.Value, cancellationToken);
+    if (patientProfile is null) return Results.NotFound(new { message = "Patient profile not found." });
+
+    if (string.IsNullOrWhiteSpace(urlRequest.FileUrl))
+        return Results.BadRequest(new { message = "File URL is required." });
+
+    var fileName = string.IsNullOrWhiteSpace(urlRequest.FileName)
+        ? Path.GetFileName(new Uri(urlRequest.FileUrl).AbsolutePath)
+        : urlRequest.FileName;
+
+    var result = await labRequestService.UploadReportAsync(
+        requestId, patientProfile.PatientId, urlRequest.FileUrl, fileName, cancellationToken);
+
+    return result.Success
+        ? Results.Ok(result.Request)
+        : Results.BadRequest(new { message = result.Message });
+}).RequireAuthorization(policy => policy.RequireRole("Patient"));
 
 app.MapPost("/api/doctors", async (
     DoctorUpsertRequest request,
@@ -1153,12 +1206,17 @@ app.MapDelete("/api/appointments/{appointmentId:int}", async (
 
 app.MapGet("/api/appointments/available-slots", async (
     int doctorId,
-    DateOnly appointmentDate,
+    string appointmentDate,
     IAppointmentService appointmentService,
     CancellationToken cancellationToken) =>
 {
-    var slots = await appointmentService.GetAvailableSlotsAsync(doctorId, appointmentDate, cancellationToken);
-    return Results.Ok(new DoctorSlotAvailabilityResponse(doctorId, appointmentDate, slots));
+    if (!DateOnly.TryParse(appointmentDate, out var parsedDate))
+    {
+        return Results.BadRequest(new { message = "Invalid date format. Use YYYY-MM-DD." });
+    }
+
+    var slots = await appointmentService.GetAvailableSlotsAsync(doctorId, parsedDate, cancellationToken);
+    return Results.Ok(new DoctorSlotAvailabilityResponse(doctorId, parsedDate, slots));
 }).RequireAuthorization(policy => policy.RequireRole("Admin", "Patient", "Doctor"));
 
 // ==================== MEDICINES ====================
@@ -1973,3 +2031,5 @@ static async Task EnsureFixedAdminAsync(IServiceProvider services)
 
     await transaction.CommitAsync();
 }
+
+

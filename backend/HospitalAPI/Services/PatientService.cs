@@ -294,6 +294,16 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
         return new PatientDashboardDetailsResponse(upcomingAppointments, recentPrescriptions, recentLabReports, pendingInvoices);
     }
 
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM Patients;";
+        var count = await cmd.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt32(count);
+    }
+
     private static async Task<IReadOnlyList<PatientAppointmentOverview>> GetUpcomingAppointmentsAsync(
         MySqlConnection connection,
         int patientId,
@@ -307,6 +317,7 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
                 a.appointment_time,
                 a.status,
                 a.reason,
+                a.doctor_id,
                 CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name
             FROM Appointments a
             LEFT JOIN Doctors d ON d.doctor_id = a.doctor_id
@@ -321,12 +332,15 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var doctorId = reader.IsDBNull(reader.GetOrdinal("doctor_id")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("doctor_id"));
             items.Add(new PatientAppointmentOverview(
                 AppointmentId: reader.GetInt32(reader.GetOrdinal("appointment_id")),
                 AppointmentDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("appointment_date"))),
                 AppointmentTime: TimeOnly.FromTimeSpan(reader.GetFieldValue<TimeSpan>(reader.GetOrdinal("appointment_time"))),
                 Status: reader.GetString(reader.GetOrdinal("status")),
                 Reason: GetNullableString(reader, "reason"),
+                DoctorId: doctorId,
+                DoctorFormattedId: doctorId.HasValue ? $"DOC-{doctorId.Value:D4}" : null,
                 DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name"))));
         }
 
@@ -344,6 +358,7 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
                 p.prescription_id,
                 p.prescription_date,
                 p.diagnosis,
+                p.doctor_id,
                 CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name
             FROM Prescriptions p
             LEFT JOIN Doctors d ON d.doctor_id = p.doctor_id
@@ -357,10 +372,13 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var doctorId = reader.IsDBNull(reader.GetOrdinal("doctor_id")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("doctor_id"));
             items.Add(new PatientPrescriptionOverview(
                 PrescriptionId: reader.GetInt32(reader.GetOrdinal("prescription_id")),
                 PrescriptionDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("prescription_date"))),
                 Diagnosis: GetNullableString(reader, "diagnosis"),
+                DoctorId: doctorId,
+                DoctorFormattedId: doctorId.HasValue ? $"DOC-{doctorId.Value:D4}" : null,
                 DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name"))));
         }
 
@@ -379,6 +397,7 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
                 lr.test_name,
                 lr.test_date,
                 lr.result_summary,
+                lr.doctor_id,
                 CONCAT(COALESCE(d.first_name, ''), ' ', COALESCE(d.last_name, '')) AS doctor_name
             FROM Lab_Reports lr
             LEFT JOIN Doctors d ON d.doctor_id = lr.doctor_id
@@ -392,11 +411,14 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
+            var doctorId = reader.IsDBNull(reader.GetOrdinal("doctor_id")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("doctor_id"));
             items.Add(new PatientLabReportOverview(
                 ReportId: reader.GetInt32(reader.GetOrdinal("report_id")),
                 TestName: reader.GetString(reader.GetOrdinal("test_name")),
                 TestDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("test_date"))),
                 ResultSummary: GetNullableString(reader, "result_summary"),
+                DoctorId: doctorId,
+                DoctorFormattedId: doctorId.HasValue ? $"DOC-{doctorId.Value:D4}" : null,
                 DoctorName: NormalizeNullable(GetNullableString(reader, "doctor_name"))));
         }
 
@@ -477,8 +499,10 @@ public sealed class PatientService(MySqlConnectionFactory connectionFactory) : I
         var userIdOrdinal = reader.GetOrdinal("user_id");
         var dobOrdinal = reader.GetOrdinal("date_of_birth");
 
+        var patientId = reader.GetInt32(reader.GetOrdinal("patient_id"));
         return new PatientProfileResponse(
-            PatientId: reader.GetInt32(reader.GetOrdinal("patient_id")),
+            PatientId: patientId,
+            FormattedId: $"PAT-{patientId:D4}",
             UserId: reader.IsDBNull(userIdOrdinal) ? null : reader.GetInt32(userIdOrdinal),
             FirstName: reader.GetString(reader.GetOrdinal("first_name")),
             LastName: reader.GetString(reader.GetOrdinal("last_name")),

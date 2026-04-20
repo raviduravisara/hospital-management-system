@@ -7,24 +7,31 @@ public sealed record LabReportCreateRequest(
 
 public sealed record PatientLabReportListResponse(
     int ReportId,
+    int PatientId,
+    string PatientFormattedId,
     string TestName,
     DateOnly TestDate,
     string? ResultSummary,
     bool HasFile,
     string? FileName,
+    string? FileUrl,
     string? DoctorName,
+    string? DoctorFormattedId,
     DateTime CreatedAt);
 
 public sealed record PatientLabReportDetailResponse(
     int ReportId,
     int PatientId,
+    string PatientFormattedId,
     int? DoctorId,
     string TestName,
     DateOnly TestDate,
     string? ResultSummary,
     bool HasFile,
     string? FileName,
+    string? FileUrl,
     string? DoctorName,
+    string? DoctorFormattedId,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 

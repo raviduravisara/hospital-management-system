@@ -62,7 +62,7 @@ export default function DoctorProfile() {
       firstName: data.firstName,
       lastName: data.lastName,
       specialization: data.specialization || null,
-      licenseNumber: data.licenseNumber,
+      licenseNumber: data.licenseNumber || `LIC-AUTO-${Date.now()}`,
       phone: data.phone || null,
       consultationFee: Number(data.consultationFee || 0),
     };
@@ -136,12 +136,7 @@ export default function DoctorProfile() {
                   input={<input id="specialization" className={inputClass(errors.specialization)} {...register('specialization')} />}
                 />
 
-                <Field
-                  label="License Number"
-                  id="licenseNumber"
-                  error={errors.licenseNumber?.message}
-                  input={<input id="licenseNumber" className={inputClass(errors.licenseNumber)} {...register('licenseNumber', { required: 'License number is required' })} />}
-                />
+                <input type="hidden" {...register('licenseNumber')} />
 
                 <Field
                   label="Phone"
