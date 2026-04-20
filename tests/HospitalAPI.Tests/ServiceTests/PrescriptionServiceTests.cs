@@ -21,14 +21,28 @@ public sealed class PrescriptionServiceTests
     }
 
     [Fact]
-    public void MockPrescriptionService_CanReturnPrescription()
+    public async Task MockPrescriptionService_CanReturnPrescription()
     {
         var mockService = new Mock<IPrescriptionService>();
-        var response = new PrescriptionResponse(1, null, 1, 2, new DateOnly(2026, 4, 10), "Headache", null, "Patient", "Doctor", Array.Empty<PrescriptionItemResponse>(), DateTime.UtcNow, DateTime.UtcNow);
+        var response = new PrescriptionResponse(
+            PrescriptionId: 1, 
+            AppointmentId: null, 
+            PatientId: 1, 
+            PatientFormattedId: "PAT-0001",
+            DoctorId: 2, 
+            DoctorFormattedId: "DOC-0002",
+            PrescriptionDate: new DateOnly(2026, 4, 10), 
+            Diagnosis: "Headache", 
+            Notes: null, 
+            PatientName: "Patient", 
+            DoctorName: "Doctor", 
+            Items: Array.Empty<PrescriptionItemResponse>(), 
+            CreatedAt: DateTime.UtcNow, 
+            UpdatedAt: DateTime.UtcNow);
         
         mockService.Setup(s => s.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(response);
 
-        var result = mockService.Object.GetByIdAsync(1).Result;
+        var result = await mockService.Object.GetByIdAsync(1);
 
         result.Should().NotBeNull();
         result!.PrescriptionId.Should().Be(1);
