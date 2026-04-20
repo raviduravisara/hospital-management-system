@@ -136,6 +136,26 @@ public sealed class LabRequestService(MySqlConnectionFactory connectionFactory) 
         return requests;
     }
 
+    public async Task<IReadOnlyList<LabRequestResponse>> GetByPatientIdAsync(int patientId, CancellationToken cancellationToken)
+    {
+        var requests = new List<LabRequestResponse>();
+
+        await using var connection = connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = BuildSelectQuery("lr.patient_id = @patientId");
+        command.Parameters.AddWithValue("@patientId", patientId);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            requests.Add(MapLabRequest(reader));
+        }
+
+        return requests;
+    }
+
     public async Task<IReadOnlyList<LabRequestResponse>> GetAllAsync(string? status, CancellationToken cancellationToken)
     {
         var requests = new List<LabRequestResponse>();
@@ -187,6 +207,46 @@ public sealed class LabRequestService(MySqlConnectionFactory connectionFactory) 
         return new LabRequestOperationResult(true, "Lab request status updated successfully.", updated);
     }
 
+    public async Task<LabRequestOperationResult> UploadReportAsync(int requestId, int patientId, string fileUrl, string fileName, CancellationToken cancellationToken)
+    {
+        var existing = await GetByIdAsync(requestId, cancellationToken);
+        if (existing is null)
+        {
+            return new LabRequestOperationResult(false, "Lab request not found.", null);
+        }
+
+        if (existing.PatientId != patientId)
+        {
+            return new LabRequestOperationResult(false, "You can only upload reports for your own lab requests.", null);
+        }
+
+        await using var connection = connectionFactory.CreateConnection();
+        await connection.OpenAsync(cancellationToken);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE Lab_Requests
+            SET report_file_url = @fileUrl,
+                report_file_name = @fileName,
+                report_uploaded_at = CURRENT_TIMESTAMP,
+                status = 'Completed',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE request_id = @requestId;
+            """;
+        command.Parameters.AddWithValue("@fileUrl", fileUrl);
+        command.Parameters.AddWithValue("@fileName", fileName);
+        command.Parameters.AddWithValue("@requestId", requestId);
+
+        var rows = await command.ExecuteNonQueryAsync(cancellationToken);
+        if (rows == 0)
+        {
+            return new LabRequestOperationResult(false, "Lab request not found.", null);
+        }
+
+        var updatedRequest = await GetByIdAsync(requestId, cancellationToken);
+        return new LabRequestOperationResult(true, "Report uploaded successfully.", updatedRequest);
+    }
+
     private static string BuildSelectQuery(string condition)
     {
         return $"""
@@ -201,6 +261,9 @@ public sealed class LabRequestService(MySqlConnectionFactory connectionFactory) 
                 lr.priority,
                 lr.status,
                 lr.notes,
+                lr.report_file_url,
+                lr.report_file_name,
+                lr.report_uploaded_at,
                 lr.requested_at,
                 lr.updated_at
             FROM Lab_Requests lr
@@ -231,17 +294,28 @@ public sealed class LabRequestService(MySqlConnectionFactory connectionFactory) 
 
     private static LabRequestResponse MapLabRequest(DbDataReader reader)
     {
+        var patientId = reader.GetInt32(reader.GetOrdinal("patient_id"));
+        var doctorId = reader.GetInt32(reader.GetOrdinal("doctor_id"));
+        var reportFileUrlOrd = reader.GetOrdinal("report_file_url");
+        var reportFileNameOrd = reader.GetOrdinal("report_file_name");
+        var reportUploadedAtOrd = reader.GetOrdinal("report_uploaded_at");
+
         return new LabRequestResponse(
             RequestId: reader.GetInt32(reader.GetOrdinal("request_id")),
-            PatientId: reader.GetInt32(reader.GetOrdinal("patient_id")),
+            PatientId: patientId,
+            PatientFormattedId: $"PAT-{patientId:D4}",
             PatientName: reader.GetString(reader.GetOrdinal("patient_name")).Trim(),
-            DoctorId: reader.GetInt32(reader.GetOrdinal("doctor_id")),
+            DoctorId: doctorId,
+            DoctorFormattedId: $"DOC-{doctorId:D4}",
             DoctorName: reader.GetString(reader.GetOrdinal("doctor_name")).Trim(),
             AppointmentId: reader.IsDBNull(reader.GetOrdinal("appointment_id")) ? null : reader.GetInt32(reader.GetOrdinal("appointment_id")),
             TestName: reader.GetString(reader.GetOrdinal("test_name")),
             Priority: reader.GetString(reader.GetOrdinal("priority")),
             Status: reader.GetString(reader.GetOrdinal("status")),
             Notes: reader.IsDBNull(reader.GetOrdinal("notes")) ? null : reader.GetString(reader.GetOrdinal("notes")),
+            ReportFileUrl: reader.IsDBNull(reportFileUrlOrd) ? null : reader.GetString(reportFileUrlOrd),
+            ReportFileName: reader.IsDBNull(reportFileNameOrd) ? null : reader.GetString(reportFileNameOrd),
+            ReportUploadedAt: reader.IsDBNull(reportUploadedAtOrd) ? null : reader.GetDateTime(reportUploadedAtOrd),
             RequestedAt: reader.GetDateTime(reader.GetOrdinal("requested_at")),
             UpdatedAt: reader.GetDateTime(reader.GetOrdinal("updated_at")));
     }

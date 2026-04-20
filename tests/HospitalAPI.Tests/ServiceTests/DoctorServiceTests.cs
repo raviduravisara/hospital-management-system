@@ -23,6 +23,7 @@ public sealed class DoctorServiceTests
         string license = "LIC-001") =>
         new(
             DoctorId: doctorId,
+            FormattedId: $"DOC-{doctorId:D4}",
             UserId: userId,
             FirstName: "Ali",
             LastName: "Hassan",

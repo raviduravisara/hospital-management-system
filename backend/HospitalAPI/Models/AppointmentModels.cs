@@ -19,7 +19,9 @@ public sealed record AppointmentStatusUpdateRequest(
 public sealed record AppointmentResponse(
     int AppointmentId,
     int PatientId,
+    string PatientFormattedId,
     int DoctorId,
+    string DoctorFormattedId,
     string PatientName,
     string DoctorName,
     DateOnly AppointmentDate,

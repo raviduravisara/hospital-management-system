@@ -614,6 +614,7 @@ function PatientAppointments() {
                       <option value="">Select doctor</option>
                       {doctors.map((doctor) => (
                         <option key={doctor.doctorId} value={doctor.doctorId}>
+                          {doctor.formattedId ? `${doctor.formattedId} - ` : ''}
                           Dr. {doctor.firstName} {doctor.lastName}
                           {doctor.specialization ? ` - ${doctor.specialization}` : ''}
                         </option>
@@ -711,7 +712,14 @@ function PatientAppointments() {
                       <tbody>
                         {appointments.map((item) => (
                           <tr key={item.appointmentId} className="border-b border-gray-50">
-                            <td className="py-3 pr-4 font-medium text-gray-900">{item.doctorName}</td>
+                            <td className="py-3 pr-4">
+                              <div className="font-medium text-gray-900">{item.doctorName}</div>
+                              {item.doctorFormattedId && (
+                                <div className="text-[10px] font-bold text-blue-600 font-mono tracking-tighter">
+                                  {item.doctorFormattedId}
+                                </div>
+                              )}
+                            </td>
                             <td className="py-3 pr-4 text-gray-700">{item.appointmentDate}</td>
                             <td className="py-3 pr-4 text-gray-700">
                               {formatTimeLabel(item.appointmentTime)}

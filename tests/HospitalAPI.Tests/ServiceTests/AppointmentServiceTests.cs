@@ -25,13 +25,13 @@ public sealed class AppointmentServiceTests
     }
 
     [Fact]
-    public void MockAppointmentService_CanReturnAvailableSlots()
+    public async Task MockAppointmentService_CanReturnAvailableSlots()
     {
         var mockService = new Mock<IAppointmentService>();
         mockService.Setup(s => s.GetAvailableSlotsAsync(It.IsAny<int>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { new TimeOnly(10, 0) });
 
-        var result = mockService.Object.GetAvailableSlotsAsync(2, new DateOnly(2026, 4, 10)).Result;
+        var result = await mockService.Object.GetAvailableSlotsAsync(2, new DateOnly(2026, 4, 10));
         
         result.Should().NotBeNull();
         result.Should().HaveCount(1);

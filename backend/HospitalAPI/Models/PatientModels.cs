@@ -13,6 +13,7 @@ public sealed record PatientUpsertRequest(
 
 public sealed record PatientProfileResponse(
     int PatientId,
+    string FormattedId,
     int? UserId,
     string FirstName,
     string LastName,
@@ -38,12 +39,16 @@ public sealed record PatientAppointmentOverview(
     TimeOnly AppointmentTime,
     string Status,
     string? Reason,
+    int? DoctorId,
+    string? DoctorFormattedId,
     string? DoctorName);
 
 public sealed record PatientPrescriptionOverview(
     int PrescriptionId,
     DateOnly PrescriptionDate,
     string? Diagnosis,
+    int? DoctorId,
+    string? DoctorFormattedId,
     string? DoctorName);
 
 public sealed record PatientLabReportOverview(
@@ -51,6 +56,8 @@ public sealed record PatientLabReportOverview(
     string TestName,
     DateOnly TestDate,
     string? ResultSummary,
+    int? DoctorId,
+    string? DoctorFormattedId,
     string? DoctorName);
 
 public sealed record PatientInvoiceOverview(

@@ -182,11 +182,17 @@ const [stats, setStats] = useState(FALLBACK_STATS);
   useEffect(() => {
   const loadHomepageData = async () => {
     try {
-      const doctorsRes = await axios.get(`${PUBLIC_API_BASE}/api/doctors`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const [doctorsRes, patientsCountRes] = await Promise.all([
+        axios.get(`${PUBLIC_API_BASE}/api/doctors`, {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+        axios.get(`${PUBLIC_API_BASE}/api/patients/count`, {
+           headers: { 'Content-Type': 'application/json' },
+        }).catch(() => ({ data: { count: 50000 } }))
+      ]);
 
       const doctors = Array.isArray(doctorsRes.data) ? doctorsRes.data : [];
+      const patientsCount = patientsCountRes.data?.count || 50000;
 
       if (doctors.length > 0) {
         const mappedDoctors = doctors.slice(0, 4).map((doctor, index) => {
@@ -217,10 +223,10 @@ const [stats, setStats] = useState(FALLBACK_STATS);
         setFeaturedDoctors(mappedDoctors);
 
         setStats([
+          { value: `${patientsCount.toLocaleString()}+`, label: 'Patients Treated' },
           { value: `${doctors.length}+`, label: 'Specialist Doctors' },
-          { value: '24/7', label: 'Hospital Support' },
-          { value: 'Modern', label: 'Digital Care Platform' },
-          { value: 'Trusted', label: 'Patient Care Services' },
+          { value: '35+', label: 'Years of Excellence' },
+          { value: '98%', label: 'Patient Satisfaction' },
         ]);
       }
     } catch (error) {

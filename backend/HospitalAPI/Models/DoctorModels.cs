@@ -11,6 +11,7 @@ public sealed record DoctorUpsertRequest(
 
 public sealed record DoctorProfileResponse(
     int DoctorId,
+    string FormattedId,
     int? UserId,
     string FirstName,
     string LastName,

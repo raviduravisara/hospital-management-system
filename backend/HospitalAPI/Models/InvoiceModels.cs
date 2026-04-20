@@ -10,6 +10,7 @@ public sealed record InvoiceUpsertRequest(
 public sealed record InvoiceResponse(
     int InvoiceId,
     int PatientId,
+    string PatientFormattedId,
     int? AppointmentId,
     DateOnly InvoiceDate,
     decimal TotalAmount,

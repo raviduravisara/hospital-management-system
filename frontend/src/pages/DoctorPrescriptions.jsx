@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import Select from 'react-select';
 import { Link, Navigate } from 'react-router-dom';
 import axiosInstance from '../api/axios';
 import { extractRoleFromToken } from '../utils/auth';
@@ -75,6 +76,24 @@ export default function DoctorPrescriptions() {
       setPrescriptions([]);
     }
   };
+
+  const patientOptions = useMemo(() => {
+    const map = new Map();
+    appointments.forEach((item) => {
+      if (!map.has(String(item.patientId))) {
+        map.set(String(item.patientId), {
+          name: item.patientName || `Patient #${item.patientId}`,
+          formattedId: item.patientFormattedId || `PAT-${String(item.patientId).padStart(4, '0')}`
+        });
+      }
+    });
+
+    return Array.from(map.entries())
+      .map(([id, data]) => {
+        return { value: id, label: `${data.formattedId} - ${data.name}` };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [appointments]);
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
@@ -236,23 +255,32 @@ export default function DoctorPrescriptions() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Create Prescription</h2>
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm text-gray-700">
-                  Patient ID
-                  <input
-  name="patientId"
-  type="number"
-  min="1"
-  value={form.patientId}
-  onChange={handleFormChange}
-  className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none"
-  placeholder="Patient ID"
-  disabled={Boolean(form.appointmentId)}
-/>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <label className="block">Patient ID</label>
+                  <Select
+                    options={patientOptions}
+                    value={patientOptions.find((opt) => opt.value === String(form.patientId)) || null}
+                    onChange={(selected) =>
+                      handleFormChange({ target: { name: 'patientId', value: selected ? selected.value : '' } })
+                    }
+                    isDisabled={Boolean(form.appointmentId)}
+                    placeholder="Search PAT-XXXX..."
+                    isClearable
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '1rem',
+                        borderColor: '#E5E7EB',
+                        backgroundColor: '#F9FAFB',
+                        padding: '4px',
+                        fontSize: '0.875rem',
+                      }),
+                    }}
+                  />
+                </div>
                   {form.appointmentId && (
                     <p className="text-xs text-gray-500">Patient ID is auto-filled from the selected appointment.</p>
                   )}
-                </label>
-
                 <label className="space-y-2 text-sm text-gray-700">
                   Appointment (optional)
                   {appointments.length ? (

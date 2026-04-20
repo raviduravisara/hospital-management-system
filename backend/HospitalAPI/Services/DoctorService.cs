@@ -147,18 +147,20 @@ public sealed class DoctorService(MySqlConnectionFactory connectionFactory) : ID
         await using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT
-                doctor_id,
-                user_id,
-                first_name,
-                last_name,
-                specialization,
-                license_number,
-                phone,
-                consultation_fee,
-                created_at,
-                updated_at
-            FROM Doctors
-            ORDER BY doctor_id DESC;
+                d.doctor_id,
+                d.user_id,
+                d.first_name,
+                d.last_name,
+                d.specialization,
+                d.license_number,
+                d.phone,
+                d.consultation_fee,
+                d.created_at,
+                d.updated_at
+            FROM Doctors d
+            INNER JOIN Users u ON d.user_id = u.user_id
+            WHERE u.is_active = 1
+            ORDER BY d.doctor_id DESC;
             """;
 
         var doctors = new List<DoctorProfileResponse>();
@@ -295,8 +297,10 @@ public sealed class DoctorService(MySqlConnectionFactory connectionFactory) : ID
     {
         var userIdOrdinal = reader.GetOrdinal("user_id");
 
+        var doctorId = reader.GetInt32(reader.GetOrdinal("doctor_id"));
         return new DoctorProfileResponse(
-            DoctorId: reader.GetInt32(reader.GetOrdinal("doctor_id")),
+            DoctorId: doctorId,
+            FormattedId: $"DOC-{doctorId:D4}",
             UserId: reader.IsDBNull(userIdOrdinal) ? null : reader.GetInt32(userIdOrdinal),
             FirstName: reader.GetString(reader.GetOrdinal("first_name")),
             LastName: reader.GetString(reader.GetOrdinal("last_name")),

@@ -19,4 +19,6 @@ public interface IPatientService
     Task<PatientDashboardSummaryResponse?> GetDashboardSummaryByUserIdAsync(int userId, CancellationToken cancellationToken);
 
     Task<PatientDashboardDetailsResponse?> GetDashboardDetailsByUserIdAsync(int userId, CancellationToken cancellationToken);
+
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken);
 }
