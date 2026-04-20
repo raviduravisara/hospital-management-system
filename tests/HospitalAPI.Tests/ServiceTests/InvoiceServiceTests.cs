@@ -26,6 +26,7 @@ public sealed class InvoiceServiceTests
         new(
             InvoiceId: id,
             PatientId: 10,
+            PatientFormattedId: "PAT-0010",
             AppointmentId: null,
             InvoiceDate: new DateOnly(2026, 3, 23),
             TotalAmount: total,
