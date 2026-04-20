@@ -21,8 +21,10 @@ public sealed record ConsultationNoteUpdateRequest(
 public sealed record ConsultationNoteResponse(
     int NoteId,
     int PatientId,
+    string PatientFormattedId,
     string PatientName,
     int DoctorId,
+    string DoctorFormattedId,
     string DoctorName,
     int? AppointmentId,
     DateOnly? AppointmentDate,

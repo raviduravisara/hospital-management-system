@@ -10,6 +10,10 @@ public interface ILabRequestService
 
     Task<IReadOnlyList<LabRequestResponse>> GetByDoctorIdAsync(int doctorId, string? status, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<LabRequestResponse>> GetByPatientIdAsync(int patientId, CancellationToken cancellationToken);
+
+    Task<LabRequestOperationResult> UploadReportAsync(int requestId, int patientId, string fileUrl, string fileName, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<LabRequestResponse>> GetAllAsync(string? status, CancellationToken cancellationToken);
 
     Task<LabRequestOperationResult> UpdateStatusAsync(int requestId, string status, CancellationToken cancellationToken);

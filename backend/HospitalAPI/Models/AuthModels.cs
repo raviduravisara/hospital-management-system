@@ -16,7 +16,7 @@ public sealed class AdminAccountSettings
     public const string SectionName = "AdminAccount";
 
     public bool Enabled { get; init; } = true;
-    public string Username { get; init; } = "admin1";
+    public string Username { get; init; } = "Admin";
     public string Email { get; init; } = "admin@hospital.local";
     public string Password { get; init; } = "Admin@123";
 }

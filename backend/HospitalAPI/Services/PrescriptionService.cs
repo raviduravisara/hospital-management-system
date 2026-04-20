@@ -242,11 +242,15 @@ public sealed class PrescriptionService(MySqlConnectionFactory connectionFactory
             var prescriptionId = reader.GetInt32(reader.GetOrdinal("prescription_id"));
             if (!prescriptions.TryGetValue(prescriptionId, out var entry))
             {
+                var patientId = reader.GetInt32(reader.GetOrdinal("patient_id"));
+                var doctorId = reader.GetInt32(reader.GetOrdinal("doctor_id"));
                 entry = (new PrescriptionResponse(
                     PrescriptionId: prescriptionId,
                     AppointmentId: reader.IsDBNull(reader.GetOrdinal("appointment_id")) ? null : reader.GetInt32(reader.GetOrdinal("appointment_id")),
-                    PatientId: reader.GetInt32(reader.GetOrdinal("patient_id")),
-                    DoctorId: reader.GetInt32(reader.GetOrdinal("doctor_id")),
+                    PatientId: patientId,
+                    PatientFormattedId: $"PAT-{patientId:D4}",
+                    DoctorId: doctorId,
+                    DoctorFormattedId: $"DOC-{doctorId:D4}",
                     PrescriptionDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("prescription_date"))),
                     Diagnosis: GetNullableString(reader, "diagnosis"),
                     Notes: GetNullableString(reader, "notes"),

@@ -289,11 +289,17 @@ export default function DoctorDashboard() {
     () =>
       labRequests.map((item) => ({
         id: `LR-${item.requestId}`,
+        requestId: item.requestId,
         patient: item.patientName,
+        patientFormattedId: item.patientFormattedId,
         test: item.testName,
         ordered: formatDateLabel(item.requestedAt),
         urgent: item.priority === 'Urgent',
         status: item.status,
+        hasReport: item.hasReport,
+        reportFileUrl: item.reportFileUrl,
+        reportFileName: item.reportFileName,
+        reportUploadedAt: item.reportUploadedAt,
       })),
     [labRequests],
   );
@@ -313,6 +319,7 @@ export default function DoctorDashboard() {
         return {
           id: `APT-${item.appointmentId}`,
           patient: item.patientName || 'Unknown Patient',
+          patientFormattedId: item.patientFormattedId,
           rawTime: String(item.appointmentTime || '00:00:00'),
           time: formatTimeLabel(item.appointmentTime),
           reason: item.reason || 'General consultation',
@@ -347,6 +354,7 @@ export default function DoctorDashboard() {
         const latestDiagnosis = latestDiagnosisByPatient.get(item.patientName);
         byPatient.set(item.patientName, {
           name: item.patientName,
+          formattedId: item.patientFormattedId,
           condition: latestDiagnosis || item.reason || 'General follow-up',
           lastVisit: formatDateLabel(item.appointmentDate),
           status: item.status === 'Cancelled' ? 'Critical' : item.status === 'Completed' ? 'Stable' : 'Monitor',
@@ -363,6 +371,7 @@ export default function DoctorDashboard() {
         map.set(item.patientId, {
           patientId: item.patientId,
           patientName: item.patientName,
+          patientFormattedId: item.patientFormattedId,
         });
       }
     });
@@ -930,6 +939,10 @@ export default function DoctorDashboard() {
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500">Doctor ID</p>
+                  <p className="mt-2 text-sm font-bold text-blue-600 font-mono tracking-tight">{activeDoctor.formattedId || 'DOC-XXXX'}</p>
+                </div>
+                <div>
                   <p className="text-xs uppercase tracking-widest text-gray-500">Name</p>
                   <p className="mt-2 text-sm font-semibold text-gray-900">{activeDoctor.name}</p>
                 </div>
@@ -1015,15 +1028,20 @@ export default function DoctorDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredAppointments.map(({ id, patient, time, reason, status, type }) => (
+                    {filteredAppointments.map(({ id, patient, patientFormattedId, time, reason, status, type }) => (
                       <tr key={id} className={`hover:bg-gray-50/60 transition-colors ${status === 'In Progress' ? 'bg-teal-50/40' : ''}`}>
                         <td className="px-5 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">
                           {status === 'In Progress' && <span className="inline-block w-1.5 h-1.5 bg-teal-500 rounded-full mr-1.5 animate-pulse" />}
                           {time}
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-3 py-3" title={patientFormattedId}>
                           <p className="font-semibold text-gray-800 whitespace-nowrap">{patient}</p>
-                          <p className="text-xs text-gray-400">{status}</p>
+                          {patientFormattedId && (
+                            <p className="text-[10px] font-bold text-teal-600 font-mono tracking-tight -mt-0.5">
+                              {patientFormattedId}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-gray-400 mt-0.5">{status}</p>
                         </td>
                         <td className="px-3 py-3 text-gray-500 text-xs hidden md:table-cell max-w-[160px] truncate">{reason}</td>
                         <td className="px-3 py-3">
@@ -1084,13 +1102,20 @@ export default function DoctorDashboard() {
                 <button onClick={() => navigate('/doctor/appointments')} className="text-xs text-teal-600 font-semibold hover:underline">View all →</button>
               </div>
               <div ref={patientsRef} className="divide-y divide-gray-50">
-                {filteredPatients.map(({ name, condition, lastVisit, status }) => (
-                  <div key={name} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50/60 transition-colors">
+                {filteredPatients.map(({ name, formattedId, condition, lastVisit, status }) => (
+                  <div key={name} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50/60 transition-colors" title={formattedId}>
                     <div className="w-9 h-9 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold shrink-0">
                       {name.split(' ').map(w => w[0]).join('').slice(0, 2)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800">{name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-800">{name}</p>
+                        {formattedId && (
+                          <span className="text-[10px] font-bold text-teal-600 font-mono px-1.5 py-0.5 bg-teal-50 rounded">
+                            {formattedId}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 truncate">{condition} · Last seen {lastVisit}</p>
                     </div>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${CONDITION_BADGE[status]}`}>{status}</span>
@@ -1111,18 +1136,40 @@ export default function DoctorDashboard() {
                 <button onClick={openLabRequestModal} className="text-xs text-teal-600 font-semibold hover:underline">Request new →</button>
               </div>
               <div ref={labReportsRef} className="divide-y divide-gray-50">
-                {filteredLabReports.map(({ id, patient, test, ordered, urgent, status }) => (
-                  <div key={id} className="px-5 py-3 hover:bg-gray-50/60 transition-colors">
+                {filteredLabReports.map(({ id, patient, patientFormattedId, test, ordered, urgent, status, hasReport, reportFileUrl, reportUploadedAt }) => (
+                  <div key={id} className={`px-5 py-3 hover:bg-gray-50/60 transition-colors ${hasReport ? 'bg-green-50/40' : ''}`} title={patientFormattedId}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           {urgent && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">URGENT</span>}
-                          <span className="text-xs font-mono text-gray-400">{id}</span>
+                          <span className="text-[10px] font-mono text-gray-400">{id}</span>
+                          {hasReport && (
+                            <span className="text-[10px] font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded">✓ UPLOADED</span>
+                          )}
                         </div>
-                        <p className="text-sm font-semibold text-gray-800">{patient}</p>
-                        <p className="text-xs text-gray-400 truncate">{test} · {status}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-gray-800">{patient}</p>
+                          {patientFormattedId && (
+                            <span className="text-[10px] font-bold text-teal-600 font-mono px-1.5 py-0.5 bg-teal-50 rounded">
+                              {patientFormattedId}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 truncate">{test} · {hasReport ? 'Report ready' : status}</p>
                       </div>
-                      <p className="text-[11px] text-gray-400 whitespace-nowrap shrink-0 mt-1">{ordered}</p>
+                      <div className="flex flex-col items-end gap-1 shrink-0 mt-1">
+                        <p className="text-[11px] text-gray-400 whitespace-nowrap">{ordered}</p>
+                        {hasReport && reportFileUrl && (
+                          <a
+                            href={reportFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-blue-700"
+                          >
+                            ↓ Download
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -3,7 +3,7 @@ using HospitalAPI.Models;
 
 namespace HospitalAPI.Services;
 
-public sealed class AppointmentService(MySqlConnectionFactory connectionFactory) : IAppointmentService
+public sealed class AppointmentService(MySqlConnectionFactory connectionFactory, IDoctorScheduleService scheduleService) : IAppointmentService
 {
     public async Task<AppointmentOperationResult> CreateAsync(AppointmentCreateRequest request, CancellationToken cancellationToken = default)
     {
@@ -23,8 +23,8 @@ public sealed class AppointmentService(MySqlConnectionFactory connectionFactory)
             """;
 
             check.Parameters.AddWithValue("@doctorId", request.DoctorId);
-            check.Parameters.AddWithValue("@date", request.AppointmentDate);
-            check.Parameters.AddWithValue("@time", request.AppointmentTime);
+            check.Parameters.AddWithValue("@date", request.AppointmentDate.ToString("yyyy-MM-dd"));
+            check.Parameters.AddWithValue("@time", request.AppointmentTime.ToString("HH:mm:ss"));
 
             var count = Convert.ToInt32(await check.ExecuteScalarAsync(cancellationToken));
             if (count > 0)
@@ -45,8 +45,8 @@ cmd.CommandText = """
 
 cmd.Parameters.AddWithValue("@patientId", request.PatientId);
 cmd.Parameters.AddWithValue("@doctorId", request.DoctorId);
-cmd.Parameters.AddWithValue("@date", request.AppointmentDate);
-cmd.Parameters.AddWithValue("@time", request.AppointmentTime);
+cmd.Parameters.AddWithValue("@date", request.AppointmentDate.ToString("yyyy-MM-dd"));
+cmd.Parameters.AddWithValue("@time", request.AppointmentTime.ToString("HH:mm:ss"));
 cmd.Parameters.AddWithValue("@reason", request.Reason);
 
 var id = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken));
@@ -142,8 +142,8 @@ return new(true, "Appointment created successfully.", appointment);
             """;
 
             check.Parameters.AddWithValue("@doctorId", request.DoctorId);
-            check.Parameters.AddWithValue("@date", request.AppointmentDate);
-            check.Parameters.AddWithValue("@time", request.AppointmentTime);
+            check.Parameters.AddWithValue("@date", request.AppointmentDate.ToString("yyyy-MM-dd"));
+            check.Parameters.AddWithValue("@time", request.AppointmentTime.ToString("HH:mm:ss"));
             check.Parameters.AddWithValue("@id", appointmentId);
 
             var count = Convert.ToInt32(await check.ExecuteScalarAsync(cancellationToken));
@@ -166,8 +166,8 @@ return new(true, "Appointment created successfully.", appointment);
         """;
 
         cmd.Parameters.AddWithValue("@doctorId", request.DoctorId);
-        cmd.Parameters.AddWithValue("@date", request.AppointmentDate);
-        cmd.Parameters.AddWithValue("@time", request.AppointmentTime);
+        cmd.Parameters.AddWithValue("@date", request.AppointmentDate.ToString("yyyy-MM-dd"));
+        cmd.Parameters.AddWithValue("@time", request.AppointmentTime.ToString("HH:mm:ss"));
         cmd.Parameters.AddWithValue("@reason", request.Reason);
         cmd.Parameters.AddWithValue("@id", appointmentId);
 
@@ -241,6 +241,18 @@ return new(true, "Appointment created successfully.", appointment);
 
     public async Task<IReadOnlyList<TimeOnly>> GetAvailableSlotsAsync(int doctorId, DateOnly appointmentDate, CancellationToken cancellationToken = default)
     {
+        var schedules = await scheduleService.GetByDoctorIdAsync(doctorId, cancellationToken);
+        var dayOfWeekStr = appointmentDate.DayOfWeek.ToString();
+        var scheduleOpt = schedules.FirstOrDefault(s => string.Equals(s.DayOfWeek, dayOfWeekStr, StringComparison.OrdinalIgnoreCase));
+        
+        if (scheduleOpt is null || !scheduleOpt.IsAvailable)
+        {
+            return Array.Empty<TimeOnly>();
+        }
+
+        var startTime = scheduleOpt.StartTime.HasValue ? TimeOnly.FromTimeSpan(scheduleOpt.StartTime.Value) : new TimeOnly(9, 0);
+        var endTime = scheduleOpt.EndTime.HasValue ? TimeOnly.FromTimeSpan(scheduleOpt.EndTime.Value) : new TimeOnly(17, 0);
+
         var booked = new HashSet<TimeOnly>();
 
         await using var connection = connectionFactory.CreateConnection();
@@ -252,10 +264,11 @@ return new(true, "Appointment created successfully.", appointment);
             FROM Appointments
             WHERE doctor_id = @doctorId
               AND appointment_date = @date
+              AND status <> 'Cancelled'
         """;
 
         cmd.Parameters.AddWithValue("@doctorId", doctorId);
-        cmd.Parameters.AddWithValue("@date", appointmentDate);
+        cmd.Parameters.AddWithValue("@date", appointmentDate.ToString("yyyy-MM-dd"));
 
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
@@ -267,9 +280,13 @@ return new(true, "Appointment created successfully.", appointment);
             booked.Add(TimeOnly.FromTimeSpan(timeSpan));
         }
 
-        var allSlots = Enumerable.Range(9, 8)
-            .Select(hour => new TimeOnly(hour, 0))
-            .ToList();
+        var allSlots = new List<TimeOnly>();
+        var currentSlot = startTime;
+        while (currentSlot < endTime)
+        {
+            allSlots.Add(currentSlot);
+            currentSlot = currentSlot.AddMinutes(30);
+        }
 
         return allSlots.Where(slot => !booked.Contains(slot)).ToList();
     }
@@ -288,10 +305,15 @@ return new(true, "Appointment created successfully.", appointment);
         var createdAtOrdinal = reader.GetOrdinal("created_at");
         var updatedAtOrdinal = reader.GetOrdinal("updated_at");
 
+        var patientId = reader.GetInt32(patientIdOrdinal);
+        var doctorId = reader.GetInt32(doctorIdOrdinal);
+
         return new AppointmentResponse(
             reader.GetInt32(appointmentIdOrdinal),
-            reader.GetInt32(patientIdOrdinal),
-            reader.GetInt32(doctorIdOrdinal),
+            patientId,
+            $"PAT-{patientId:D4}",
+            doctorId,
+            $"DOC-{doctorId:D4}",
             reader.GetString(patientNameOrdinal),
             reader.GetString(doctorNameOrdinal),
             DateOnly.FromDateTime(reader.GetDateTime(appointmentDateOrdinal)),

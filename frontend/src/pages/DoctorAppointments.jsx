@@ -693,7 +693,14 @@ function DoctorAppointments() {
                     <tbody>
                       {filteredAppointments.map((item) => (
                         <tr key={item.appointmentId} className="border-b border-gray-50">
-                          <td className="py-3 pr-4 font-medium text-gray-900">{item.patientName}</td>
+                          <td className="py-3 pr-4" title={item.patientFormattedId}>
+                            <div className="font-medium text-gray-900">{item.patientName}</div>
+                            {item.patientFormattedId && (
+                              <div className="text-[10px] font-bold text-teal-600 font-mono tracking-tighter">
+                                {item.patientFormattedId}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3 pr-4 text-gray-700">{item.appointmentDate}</td>
                           <td className="py-3 pr-4 text-gray-700">{formatTimeLabel(item.appointmentTime)}</td>
                           <td className="py-3 pr-4">{getStatusBadge(item.status)}</td>

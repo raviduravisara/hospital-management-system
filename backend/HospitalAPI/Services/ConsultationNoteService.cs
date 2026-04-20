@@ -258,11 +258,16 @@ public sealed class ConsultationNoteService(MySqlConnectionFactory connectionFac
         var treatmentPlanOrdinal = reader.GetOrdinal("treatment_plan");
         var notesOrdinal = reader.GetOrdinal("notes");
 
+        var patientId = reader.GetInt32(reader.GetOrdinal("patient_id"));
+        var doctorId = reader.GetInt32(reader.GetOrdinal("doctor_id"));
+
         return new ConsultationNoteResponse(
             NoteId: reader.GetInt32(reader.GetOrdinal("note_id")),
-            PatientId: reader.GetInt32(reader.GetOrdinal("patient_id")),
+            PatientId: patientId,
+            PatientFormattedId: $"PAT-{patientId:D4}",
             PatientName: reader.GetString(reader.GetOrdinal("patient_name")).Trim(),
-            DoctorId: reader.GetInt32(reader.GetOrdinal("doctor_id")),
+            DoctorId: doctorId,
+            DoctorFormattedId: $"DOC-{doctorId:D4}",
             DoctorName: reader.GetString(reader.GetOrdinal("doctor_name")).Trim(),
             AppointmentId: reader.IsDBNull(reader.GetOrdinal("appointment_id")) ? null : reader.GetInt32(reader.GetOrdinal("appointment_id")),
             AppointmentDate: reader.IsDBNull(appointmentDateOrdinal) ? null : DateOnly.FromDateTime(reader.GetDateTime(appointmentDateOrdinal)),

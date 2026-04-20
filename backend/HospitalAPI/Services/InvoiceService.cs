@@ -239,9 +239,11 @@ public sealed class InvoiceService(MySqlConnectionFactory connectionFactory) : I
         var createdByOrdinal = reader.GetOrdinal("created_by_user_id");
         var patientNameOrdinal = reader.GetOrdinal("patient_name");
 
+        var patientId = reader.GetInt32(reader.GetOrdinal("patient_id"));
         return new InvoiceResponse(
             InvoiceId: reader.GetInt32(reader.GetOrdinal("invoice_id")),
-            PatientId: reader.GetInt32(reader.GetOrdinal("patient_id")),
+            PatientId: patientId,
+            PatientFormattedId: $"PAT-{patientId:D4}",
             AppointmentId: reader.IsDBNull(appointmentIdOrdinal) ? null : reader.GetInt32(appointmentIdOrdinal),
             InvoiceDate: DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("invoice_date"))),
             TotalAmount: reader.GetDecimal(reader.GetOrdinal("total_amount")),
