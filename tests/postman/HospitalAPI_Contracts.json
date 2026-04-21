@@ -1,0 +1,79 @@
+{
+  "info": {
+    "name": "Sprint 4: HealthAPI Contract End-To-End",
+    "description": "Automated Newman test suite verifying backend relational API constraints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login as Patient Extract Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.environment.set(\"patient_token\", jsonData.accessToken);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"usernameOrEmail\": \"Admin\",\n    \"password\": \"Admin@123\"\n}"
+        },
+        "url": { "raw": "http://localhost:5041/api/auth/login", "protocol": "http", "host": ["localhost"], "port": "5041", "path": ["api", "auth", "login"] }
+      }
+    },
+    {
+      "name": "Booking Flow - Must return 201 Created Schema",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Strictly 201 Created instead of 200\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test(\"Response Schema verification\", function () {",
+              "    var Ajv = require('ajv');",
+              "    var ajv = new Ajv({logger: false});",
+              "    var schema = {",
+              "        \"type\": \"object\",",
+              "        \"required\": [\"appointmentId\", \"status\"],",
+              "        \"properties\": {",
+              "            \"status\": { \"type\": \"string\", \"enum\": [\"Pending\"] }",
+              "        }",
+              "    };",
+              "    var valid = ajv.validate(schema, pm.response.json());",
+              "    pm.expect(valid).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{patient_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"patientId\": 1,\n    \"doctorId\": 1,\n    \"appointmentDate\": \"2026-05-15\",\n    \"appointmentTime\": \"10:00:00\",\n    \"reason\": \"Automated API Contract Test Booking\"\n}"
+        },
+        "url": { "raw": "http://localhost:5041/api/appointments", "protocol": "http", "host": ["localhost"], "port": "5041", "path": ["api", "appointments"] }
+      }
+    }
+  ]
+}
